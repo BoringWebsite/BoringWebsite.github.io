@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pen Spinner - Rage Game</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				font-family: "Arial", sans-serif;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				min-height: 100vh;
+				overflow: hidden;
+			}
+
+			#gameContainer {
+				text-align: center;
+				color: white;
+			}
+
+			#gameCanvas {
+				border: 3px solid #fff;
+				border-radius: 10px;
+				background: #f0f0f0;
+				box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+			}
+
+			#controls {
+				margin-top: 20px;
+				font-size: 18px;
+			}
+
+			#score {
+				font-size: 24px;
+				font-weight: bold;
+				margin-bottom: 10px;
+			}
+
+			.key {
+				display: inline-block;
+				background: #333;
+				color: white;
+				padding: 8px 12px;
+				margin: 0 5px;
+				border-radius: 5px;
+				font-weight: bold;
+			}
+
+			.pressed {
+				background: #ff6b6b !important;
+				transform: scale(0.95);
+			}
+		</style>
+	</head>
+	<body>
+		<div id="gameContainer">
+			<div id="score">Spins: 0 | Drops: 0</div>
+			<canvas id="gameCanvas" width="800" height="600"></canvas>
+			<div id="controls">
+				<div>
+					Controls: <span class="key" id="keyQ">Q</span>
+					<span class="key" id="keyW">W</span>
+					<span class="key" id="keyT">T</span>
+					<span class="key" id="keyO">O</span>
+					<span class="key" id="keyP">P</span>
+				</div>
+				<div style="margin-top: 10px; font-size: 14px">
+					Q/W = Thumb/Index | T/O/P = Middle/Ring/Pinky | Don't fall asleep!
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const canvas = document.getElementById("gameCanvas");
+			const ctx = canvas.getContext("2d");
+
+			// Game state
+			let spins = 0;
+			let drops = 0;
+			let gameRunning = true;
+			let boredom = 50; // Start at medium boredom
+			let lastSpinTime = Date.now();
+
+			// Hand and pen physics
+			let hand = {
+				x: canvas.width / 2,
+				y: canvas.height / 2 + 50,
+				fingers: {
+					thumb: { angle: 0.3, force: 0, extended: 0.7 },
+					index: { angle: 0.1, force: 0, extended: 0.9 },
+					middle: { angle: -0.1, force: 0, extended: 0.95 },
+					ring: { angle: -0.3, force: 0, extended: 0.8 },
+					pinky: { angle: -0.4, force: 0, extended: 0.6 },
+				},
+			};
+
+			let pen = {
+				x: canvas.width / 2,
+				y: canvas.height / 2,
+				angle: 0,
+				angularVelocity: 0,
+				velocityX: 0,
+				velocityY: 0,
+				length: 120,
+				held: true,
+				stability: 1.0,
+			};
+
+			// Input handling
+			let keys = {};
+
+			document.addEventListener("keydown", (e) => {
+				if (!gameRunning) {
+					// Reset game on any key press
+					spins = 0;
+					drops = 0;
+					boredom = 50;
+					gameRunning = true;
+					lastSpinTime = Date.now();
+					resetPen();
+					updateScore();
+					return;
+				}
+
+				keys[e.key.toLowerCase()] = true;
+				updateKeyVisuals(e.key.toLowerCase(), true);
+			});
+
+			document.addEventListener("keyup", (e) => {
+				keys[e.key.toLowerCase()] = false;
+				updateKeyVisuals(e.key.toLowerCase(), false);
+			});
+
+			function updateKeyVisuals(key, pressed) {
+				const keyMap = {
+					q: "keyQ",
+					w: "keyW",
+					t: "keyT",
+					o: "keyO",
+					p: "keyP",
+				};
+				const element = document.getElementById(keyMap[key]);
+				if (element) {
+					if (pressed) {
+						element.classList.add("pressed");
+					} else {
+						element.classList.remove("pressed");
+					}
+				}
+			}
+
+			function updatePhysics() {
+				if (!gameRunning) return;
+
+				// Update boredom - increases over time, decreases when spinning
+				const currentTime = Date.now();
+				const timeSinceLastSpin = currentTime - lastSpinTime;
+
+				// Boredom increases slowly over time
+				boredom += 0.1;
+
+				// Boredom reduction moved to spin counting section below
+				// (removed the fast spinning boredom reduction here)
+
+				// Clamp boredom between 0 and 100
+				boredom = Math.max(0, Math.min(100, boredom));
+
+				// Game over if too bored
+				if (boredom >= 100) {
+					gameRunning = false;
+				}
+
+				// Update finger forces based on input
+				hand.fingers.thumb.force = keys["q"] ? 1 : 0;
+				hand.fingers.index.force = keys["w"] ? 1 : 0;
+				hand.fingers.middle.force = keys["t"] ? 1 : 0;
+				hand.fingers.ring.force = keys["o"] ? 1 : 0;
+				hand.fingers.pinky.force = keys["p"] ? 1 : 0;
+
+				// Calculate finger positions and forces
+				let totalForceX = 0;
+				let totalForceY = 0;
+				let torque = 0;
+
+				Object.keys(hand.fingers).forEach((fingerName, index) => {
+					const finger = hand.fingers[fingerName];
+
+					// Awkward physics - each finger affects pen differently
+					if (finger.force > 0) {
+						const fingerAngle = finger.angle + (Math.random() - 0.5) * 0.1; // Add chaos
+						const forceMultiplier = finger.extended * finger.force;
+
+						// Each finger applies force at different points along pen
+						const contactPoint = index / 3 - 0.5; // -0.5 to 0.5 along pen
+
+						totalForceX += Math.cos(fingerAngle) * forceMultiplier * 2;
+						totalForceY += Math.sin(fingerAngle) * forceMultiplier * 2;
+
+						// Torque calculation (distance from center of mass)
+						torque +=
+							contactPoint *
+							forceMultiplier *
+							Math.cos(pen.angle - fingerAngle) *
+							0.1;
+					}
+				});
+
+				if (pen.held) {
+					// Apply forces to pen
+					pen.velocityX += totalForceX * 0.02;
+					pen.velocityY += totalForceY * 0.02;
+					pen.angularVelocity += torque;
+
+					// Damping
+					pen.velocityX *= 0.95;
+					pen.velocityY *= 0.95;
+					pen.angularVelocity *= 0.98;
+
+					// Update pen position and rotation
+					pen.x += pen.velocityX;
+					pen.y += pen.velocityY;
+					pen.angle += pen.angularVelocity;
+
+					// Check if pen is dropped (moved too far from hand)
+					const distFromHand = Math.sqrt(
+						Math.pow(pen.x - hand.x, 2) + Math.pow(pen.y - hand.y, 2)
+					);
+
+					if (
+						distFromHand > 80 ||
+						Math.abs(pen.velocityX) > 5 ||
+						Math.abs(pen.velocityY) > 5
+					) {
+						pen.held = false;
+						drops++;
+						boredom += 20; // Increased from 10 to 20 - dropping pen significantly increases boredom
+						updateScore();
+					}
+
+					// Count spins
+					if (Math.abs(pen.angularVelocity) > 0.15) {
+						const currentSpin = Math.floor(Math.abs(pen.angle) / (Math.PI * 2));
+						if (currentSpin > spins) {
+							spins = currentSpin;
+							boredom -= 5; // Reduce boredom only on complete spins
+							lastSpinTime = currentTime;
+							updateScore();
+						}
+					}
+
+					// Keep pen somewhat near hand (rage game balance)
+					pen.x = Math.max(hand.x - 100, Math.min(hand.x + 100, pen.x));
+					pen.y = Math.max(hand.y - 100, Math.min(hand.y + 100, pen.y));
+				} else {
+					// Pen is falling
+					pen.velocityY += 0.3; // gravity
+					pen.x += pen.velocityX;
+					pen.y += pen.velocityY;
+					pen.angle += pen.angularVelocity;
+
+					// Reset if pen falls off screen
+					if (pen.y > canvas.height + 50) {
+						resetPen();
+					}
+				}
+			}
+
+			function resetPen() {
+				pen.x = hand.x;
+				pen.y = hand.y;
+				pen.angle = Math.random() * 0.4 - 0.2;
+				pen.angularVelocity = 0;
+				pen.velocityX = 0;
+				pen.velocityY = 0;
+				pen.held = true;
+			}
+
+			function updateScore() {
+				document.getElementById(
+					"score"
+				).textContent = `Spins: ${spins} | Drops: ${drops} | Boredom: ${Math.floor(
+					boredom
+				)}%`;
+			}
+
+			function drawClassroom() {
+				// Clear canvas with classroom floor
+				ctx.fillStyle = "#e8dcc6";
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+				// Draw desk surface
+				ctx.fillStyle = "#d2b48c";
+				ctx.fillRect(0, canvas.height - 200, canvas.width, 200);
+
+				// Desk wood grain
+				ctx.strokeStyle = "#c19a6b";
+				ctx.lineWidth = 1;
+				for (let i = 0; i < 10; i++) {
+					ctx.beginPath();
+					ctx.moveTo(0, canvas.height - 200 + i * 20);
+					ctx.lineTo(canvas.width, canvas.height - 200 + i * 20);
+					ctx.stroke();
+				}
+
+				// Blackboard in background
+				ctx.fillStyle = "#2d5016";
+				ctx.fillRect(200, 50, canvas.width - 350, 150);
+				ctx.strokeStyle = "#8b4513";
+				ctx.lineWidth = 8;
+				ctx.strokeRect(200, 50, canvas.width - 350, 150);
+
+				// Chalk writing on board
+				ctx.fillStyle = "#ffffff";
+				ctx.font = "24px Arial";
+				ctx.textAlign = "center";
+				ctx.fillText("Stuff and things", canvas.width / 2, 100);
+				ctx.font = "18px Arial";
+				ctx.fillText("I teacher stuff", canvas.width / 2, 130);
+				ctx.fillText("Me school", canvas.width / 2, 155);
+
+				// Window
+				ctx.fillStyle = "#87ceeb";
+				ctx.fillRect(canvas.width - 120, 60, 100, 120);
+				ctx.strokeStyle = "#654321";
+				ctx.lineWidth = 4;
+				ctx.strokeRect(canvas.width - 120, 60, 100, 120);
+
+				// Window cross
+				ctx.beginPath();
+				ctx.moveTo(canvas.width - 70, 60);
+				ctx.lineTo(canvas.width - 70, 180);
+				ctx.moveTo(canvas.width - 120, 120);
+				ctx.lineTo(canvas.width - 20, 120);
+				ctx.stroke();
+
+				// Clouds in window
+				ctx.fillStyle = "#ffffff";
+				ctx.beginPath();
+				ctx.arc(canvas.width - 90, 90, 8, 0, Math.PI * 2);
+				ctx.arc(canvas.width - 80, 85, 10, 0, Math.PI * 2);
+				ctx.arc(canvas.width - 70, 90, 8, 0, Math.PI * 2);
+				ctx.fill();
+
+				// Clock
+				ctx.fillStyle = "#ffffff";
+				ctx.beginPath();
+				ctx.arc(100, 100, 25, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = "#000000";
+				ctx.lineWidth = 2;
+				ctx.stroke();
+
+				// Clock hands (showing a boring time)
+				ctx.beginPath();
+				ctx.moveTo(100, 110);
+				ctx.lineTo(100, 90);
+				ctx.moveTo(100, 110);
+				ctx.lineTo(115, 90);
+				ctx.stroke();
+
+				// Notebook on desk
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(100, canvas.height - 180, 120, 80);
+				ctx.strokeStyle = "#000000";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(100, canvas.height - 180, 120, 80);
+
+				// Notebook lines
+				for (let i = 0; i < 5; i++) {
+					ctx.beginPath();
+					ctx.moveTo(110, canvas.height - 170 + i * 12);
+					ctx.lineTo(210, canvas.height - 170 + i * 12);
+					ctx.stroke();
+				}
+			}
+
+			function drawBoredomMeter() {
+				// Boredom meter background
+				ctx.fillStyle = "#333";
+				ctx.fillRect(20, 20, 200, 30);
+
+				// Boredom meter fill
+				const boredomColor =
+					boredom > 75 ? "#ff4444" : boredom > 50 ? "#ffaa00" : "#44ff44";
+				ctx.fillStyle = boredomColor;
+				ctx.fillRect(20, 20, (boredom / 100) * 200, 30);
+
+				// Boredom meter text
+				ctx.fillStyle = "#fff";
+				ctx.font = "16px Arial";
+				ctx.textAlign = "center";
+				ctx.fillText("BOREDOM", 120, 40);
+
+				// Game over text
+				if (!gameRunning) {
+					ctx.fillStyle = "rgba(0,0,0,0.8)";
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+					ctx.fillStyle = "#ff4444";
+					ctx.font = "48px Arial";
+					ctx.textAlign = "center";
+					ctx.fillText("TOO BORED!", canvas.width / 2, canvas.height / 2 - 20);
+
+					ctx.fillStyle = "#fff";
+					ctx.font = "24px Arial";
+					ctx.fillText(
+						"Press any key to try again",
+						canvas.width / 2,
+						canvas.height / 2 + 30
+					);
+				}
+			}
+
+			function drawHand() {
+				ctx.save();
+				ctx.translate(hand.x, hand.y);
+
+				// Draw wrist/forearm
+				ctx.fillStyle = "#ffdbac";
+				ctx.fillRect(-25, 40, 50, 80);
+				ctx.strokeStyle = "#d4a574";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(-25, 40, 50, 80);
+
+				// Palm (more hand-shaped)
+				ctx.fillStyle = "#ffdbac";
+				ctx.beginPath();
+				ctx.ellipse(0, 10, 35, 45, 0, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = "#d4a574";
+				ctx.lineWidth = 2;
+				ctx.stroke();
+
+				// Thumb base (more realistic positioning)
+				ctx.fillStyle = "#ffdbac";
+				ctx.beginPath();
+				ctx.ellipse(-25, 5, 15, 25, -0.3, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.stroke();
+
+				// Draw fingers as continuous shapes
+				const fingerData = [
+					{
+						name: "thumb",
+						x: -35,
+						baseY: -10,
+						angle: 0,
+						length: hand.fingers.thumb.extended * 45,
+						baseWidth: 16,
+					},
+					{
+						name: "index",
+						x: -18,
+						baseY: -25,
+						angle: 0,
+						length: hand.fingers.index.extended * 55,
+						baseWidth: 14,
+					},
+					{
+						name: "middle",
+						x: -2,
+						baseY: -30,
+						angle: 0,
+						length: hand.fingers.middle.extended * 60,
+						baseWidth: 15,
+					},
+					{
+						name: "ring",
+						x: 14,
+						baseY: -25,
+						angle: 0,
+						length: hand.fingers.ring.extended * 50,
+						baseWidth: 13,
+					},
+					{
+						name: "pinky",
+						x: 32,
+						baseY: -18,
+						angle: 0,
+						length: hand.fingers.pinky.extended * 40,
+						baseWidth: 12,
+					},
+				];
+
+				fingerData.forEach((fingerInfo) => {
+					const finger = hand.fingers[fingerInfo.name];
+
+					ctx.save();
+					ctx.translate(fingerInfo.x, fingerInfo.baseY);
+					ctx.rotate(fingerInfo.angle);
+
+					// Draw finger as one continuous tapered shape
+					ctx.fillStyle = finger.force > 0 ? "#ffb3b3" : "#ffdbac";
+					ctx.beginPath();
+
+					const baseWidth = fingerInfo.baseWidth;
+					const tipWidth = baseWidth * 0.6;
+					const length = fingerInfo.length;
+
+					// Left side of finger (tapered)
+					ctx.moveTo(-baseWidth / 2, 0);
+					ctx.quadraticCurveTo(
+						-tipWidth / 2,
+						-length * 0.7,
+						-tipWidth / 2,
+						-length
+					);
+
+					// Fingertip (rounded)
+					ctx.quadraticCurveTo(0, -length - 4, tipWidth / 2, -length);
+
+					// Right side of finger (tapered)
+					ctx.quadraticCurveTo(tipWidth / 2, -length * 0.7, baseWidth / 2, 0);
+
+					// Base of finger (rounded)
+					ctx.quadraticCurveTo(0, 5, -baseWidth / 2, 0);
+
+					ctx.closePath();
+					ctx.fill();
+
+					// Finger outline
+					ctx.strokeStyle = finger.force > 0 ? "#ff6b6b" : "#d4a574";
+					ctx.lineWidth = 1.5;
+					ctx.stroke();
+
+					// Subtle joint lines
+					ctx.strokeStyle = "#c49984";
+					ctx.lineWidth = 0.8;
+					ctx.setLineDash([2, 2]);
+
+					// First joint
+					ctx.beginPath();
+					ctx.moveTo(-baseWidth * 0.4, -length * 0.33);
+					ctx.lineTo(baseWidth * 0.4, -length * 0.33);
+					ctx.stroke();
+
+					// Second joint
+					ctx.beginPath();
+					ctx.moveTo(-tipWidth * 0.4, -length * 0.66);
+					ctx.lineTo(tipWidth * 0.4, -length * 0.66);
+					ctx.stroke();
+
+					ctx.setLineDash([]);
+
+					// Fingernail
+					ctx.fillStyle = "#f5deb3";
+					ctx.beginPath();
+					ctx.ellipse(0, -length + 2, tipWidth / 3, 3, 0, 0, Math.PI * 2);
+					ctx.fill();
+
+					ctx.restore();
+				});
+
+				// Palm lines for realism
+				ctx.strokeStyle = "#d4a574";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				// Life line
+				ctx.moveTo(-20, -10);
+				ctx.quadraticCurveTo(-5, 15, 10, 35);
+				// Heart line
+				ctx.moveTo(-25, -15);
+				ctx.quadraticCurveTo(0, -20, 25, -10);
+				// Head line
+				ctx.moveTo(-30, 0);
+				ctx.quadraticCurveTo(0, -5, 30, 5);
+				ctx.stroke();
+
+				ctx.restore();
+			}
+
+			function drawPen() {
+				ctx.save();
+				ctx.translate(pen.x, pen.y);
+				ctx.rotate(pen.angle);
+
+				const penLength = pen.length;
+
+				// Pen shadow for depth
+				ctx.fillStyle = "rgba(0,0,0,0.2)";
+				ctx.fillRect(-penLength / 2 + 2, 2, penLength, 8);
+
+				// Main pen body (gradient effect)
+				const gradient = ctx.createLinearGradient(0, -4, 0, 4);
+				gradient.addColorStop(0, pen.held ? "#34495e" : "#e74c3c");
+				gradient.addColorStop(0.5, pen.held ? "#2c3e50" : "#c0392b");
+				gradient.addColorStop(1, pen.held ? "#1a252f" : "#a93226");
+
+				ctx.fillStyle = gradient;
+				ctx.fillRect(-penLength / 2, -4, penLength, 8);
+
+				// Pen body outline
+				ctx.strokeStyle = "#1a252f";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(-penLength / 2, -4, penLength, 8);
+
+				// Pen grip section (textured)
+				ctx.fillStyle = "#5d6d7e";
+				ctx.fillRect(penLength / 4, -3, penLength / 4, 6);
+
+				// Grip texture lines
+				ctx.strokeStyle = "#34495e";
+				ctx.lineWidth = 0.5;
+				for (let i = 0; i < 8; i++) {
+					const x = penLength / 4 + (i * (penLength / 4)) / 8;
+					ctx.beginPath();
+					ctx.moveTo(x, -3);
+					ctx.lineTo(x, 3);
+					ctx.stroke();
+				}
+
+				// Pen tip (more detailed)
+				ctx.fillStyle = "#85929e";
+				ctx.fillRect(penLength / 2 - 15, -2, 15, 4);
+
+				// Tip cone
+				ctx.fillStyle = "#34495e";
+				ctx.beginPath();
+				ctx.moveTo(penLength / 2 - 15, -2);
+				ctx.lineTo(penLength / 2, 0);
+				ctx.lineTo(penLength / 2 - 15, 2);
+				ctx.closePath();
+				ctx.fill();
+
+				// Writing tip
+				ctx.fillStyle = "#1c2833";
+				ctx.fillRect(penLength / 2 - 2, -0.5, 2, 1);
+
+				// Pen cap (more detailed)
+				ctx.fillStyle = "#5dade2";
+				ctx.fillRect(-penLength / 2, -5, 20, 10);
+
+				// Cap highlight
+				ctx.fillStyle = "#85c1e9";
+				ctx.fillRect(-penLength / 2, -5, 20, 3);
+
+				// Cap clip
+				ctx.fillStyle = "#2e86ab";
+				ctx.fillRect(-penLength / 2 + 18, -6, 4, 12);
+				ctx.fillRect(-penLength / 2 + 20, -8, 8, 4);
+
+				// Brand text (optional detail)
+				ctx.fillStyle = "#1a252f";
+				ctx.font = "8px Arial";
+				ctx.textAlign = "center";
+				ctx.fillText("BIC", 0, 1);
+
+				// Pen highlights for 3D effect
+				ctx.strokeStyle = "rgba(255,255,255,0.3)";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				ctx.moveTo(-penLength / 2, -4);
+				ctx.lineTo(penLength / 2 - 15, -4);
+				ctx.stroke();
+
+				ctx.restore();
+			}
+
+			function draw() {
+				// Draw classroom background
+				drawClassroom();
+
+				// Draw boredom meter
+				drawBoredomMeter();
+
+				// Draw game elements
+				drawHand();
+				drawPen();
+
+				// Draw instructions if just started
+				if (spins === 0 && drops === 0 && gameRunning) {
+					ctx.fillStyle = "rgba(0,0,0,0.7)";
+					ctx.font = "20px Arial";
+					ctx.textAlign = "center";
+					ctx.fillText(
+						"Keep spinning to stay awake in class!",
+						canvas.width / 2,
+						250
+					);
+					ctx.font = "16px Arial";
+					ctx.fillText(
+						"Use Q, W, T, O, P to control your fingers",
+						canvas.width / 2,
+						275
+					);
+				}
+			}
+
+			function gameLoop() {
+				updatePhysics();
+				draw();
+				requestAnimationFrame(gameLoop);
+			}
+
+			// Start the game
+			resetPen();
+			gameLoop();
+		</script>
+	</body>
+</html>
+</html>
