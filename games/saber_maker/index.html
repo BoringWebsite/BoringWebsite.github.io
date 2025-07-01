@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Lightsaber Maker</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background: #000;
+				font-family: "Arial", sans-serif;
+				color: white;
+			}
+			#gameCanvas {
+				width: 100%;
+				height: 100vh;
+				display: block;
+			}
+			#menu {
+				position: absolute;
+				top: 20px;
+				left: 20px;
+				background: rgba(0, 0, 0, 0.8);
+				padding: 20px;
+				border-radius: 10px;
+				border: 2px solid #333;
+				min-width: 250px;
+			}
+			.menu-section {
+				margin-bottom: 15px;
+			}
+			.menu-section h3 {
+				margin: 0 0 10px 0;
+				color: #00ff00;
+				font-size: 14px;
+			}
+			.part-buttons {
+				display: flex;
+				gap: 5px;
+				flex-wrap: wrap;
+			}
+			.part-button {
+				background: #333;
+				border: 1px solid #555;
+				color: white;
+				padding: 5px 10px;
+				border-radius: 5px;
+				cursor: pointer;
+				font-size: 12px;
+				transition: background 0.2s;
+			}
+			.part-button:hover {
+				background: #555;
+			}
+			.part-button.active {
+				background: #00ff00;
+				color: black;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="gameCanvas"></canvas>
+		<div id="menu">
+			<div class="menu-section">
+				<h3>Power</h3>
+				<button id="powerToggle" class="part-button active">ON</button>
+			</div>
+			<div class="menu-section">
+				<h3>Pommel</h3>
+				<div class="part-buttons" data-section="pommel">
+					<button class="part-button active" data-type="basic">Basic</button>
+					<button class="part-button" data-type="spiked">Spiked</button>
+					<button class="part-button" data-type="rounded">Rounded</button>
+					<button class="part-button" data-type="heavy">Heavy</button>
+					<button class="part-button" data-type="curved">Curved</button>
+					<button class="part-button" data-type="ceremonial">Ceremonial</button>
+				</div>
+				<h4 style="margin: 10px 0 5px 0; color: #ccc; font-size: 12px">
+					Color
+				</h4>
+				<div class="part-buttons" data-section="pommel-color">
+					<button class="part-button active" data-type="gray">Gray</button>
+					<button class="part-button" data-type="gold">Gold</button>
+					<button class="part-button" data-type="silver">Silver</button>
+					<button class="part-button" data-type="black">Black</button>
+					<button class="part-button" data-type="bronze">Bronze</button>
+				</div>
+			</div>
+			<div class="menu-section">
+				<h3>Grip</h3>
+				<div class="part-buttons" data-section="grip">
+					<button class="part-button active" data-type="smooth">Smooth</button>
+					<button class="part-button" data-type="ribbed">Ribbed</button>
+					<button class="part-button" data-type="wrapped">Wrapped</button>
+					<button class="part-button" data-type="segmented">Segmented</button>
+					<button class="part-button" data-type="textured">Textured</button>
+					<button class="part-button" data-type="curved">Curved</button>
+				</div>
+				<h4 style="margin: 10px 0 5px 0; color: #ccc; font-size: 12px">
+					Color
+				</h4>
+				<div class="part-buttons" data-section="grip-color">
+					<button class="part-button active" data-type="gray">Gray</button>
+					<button class="part-button" data-type="gold">Gold</button>
+					<button class="part-button" data-type="silver">Silver</button>
+					<button class="part-button" data-type="black">Black</button>
+					<button class="part-button" data-type="brown">Brown</button>
+				</div>
+			</div>
+			<div class="menu-section">
+				<h3>Emitter</h3>
+				<div class="part-buttons" data-section="emitter">
+					<button class="part-button active" data-type="standard">
+						Standard
+					</button>
+					<button class="part-button" data-type="wide">Wide</button>
+					<button class="part-button" data-type="focused">Focused</button>
+					<button class="part-button" data-type="shroud">Shroud</button>
+					<button class="part-button" data-type="dual">Dual</button>
+					<button class="part-button" data-type="crossguard">Crossguard</button>
+				</div>
+				<h4 style="margin: 10px 0 5px 0; color: #ccc; font-size: 12px">
+					Color
+				</h4>
+				<div class="part-buttons" data-section="emitter-color">
+					<button class="part-button active" data-type="gray">Gray</button>
+					<button class="part-button" data-type="gold">Gold</button>
+					<button class="part-button" data-type="silver">Silver</button>
+					<button class="part-button" data-type="black">Black</button>
+					<button class="part-button" data-type="chrome">Chrome</button>
+				</div>
+			</div>
+			<div class="menu-section">
+				<h3>Blade</h3>
+				<div class="part-buttons" data-section="blade">
+					<button class="part-button active" data-type="blue">Blue</button>
+					<button class="part-button" data-type="red">Red</button>
+					<button class="part-button" data-type="green">Green</button>
+					<button class="part-button" data-type="purple">Purple</button>
+					<button class="part-button" data-type="yellow">Yellow</button>
+					<button class="part-button" data-type="white">White</button>
+					<button class="part-button" data-type="orange">Orange</button>
+					<button class="part-button" data-type="unstable">Unstable</button>
+				</div>
+			</div>
+		</div>
+		<script src="https://cdn.babylonjs.com/babylon.js"></script>
+		<script src="lightsaber-game.js"></script>
+	</body>
+</html>
