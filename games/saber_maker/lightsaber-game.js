@@ -15,13 +15,25 @@ class LightsaberMaker {
         this.lastPointerX = 0;
         this.lastPointerY = 0;
         this.bladeOn = true;
-        this.currentBladeColor = 'blue';
+        
+        // Randomly initialize parts and colors
+        const pommelOptions = ['basic', 'spiked', 'rounded', 'heavy', 'curved', 'ceremonial'];
+        const gripOptions = ['smooth', 'ribbed', 'wrapped', 'segmented', 'textured', 'curved'];
+        const emitterOptions = ['standard', 'wide', 'focused', 'shroud', 'dual', 'crossguard'];
+        const bladeOptions = ['blue', 'red', 'green', 'purple', 'yellow', 'white', 'orange', 'unstable'];
+        const colorOptions = ['gray', 'gold', 'silver', 'black', 'bronze', 'brown', 'chrome'];
+        
+        this.currentBladeColor = bladeOptions[Math.floor(Math.random() * bladeOptions.length)];
+        this.currentPommelType = pommelOptions[Math.floor(Math.random() * pommelOptions.length)];
+        this.currentGripType = gripOptions[Math.floor(Math.random() * gripOptions.length)];
+        this.currentEmitterType = emitterOptions[Math.floor(Math.random() * emitterOptions.length)];
+        
         this.glowLayer = null;
         this.unstableFlickerAnimation = null;
         this.partColors = {
-            pommel: 'gray',
-            grip: 'gray',
-            emitter: 'gray'
+            pommel: colorOptions[Math.floor(Math.random() * colorOptions.length)],
+            grip: colorOptions[Math.floor(Math.random() * colorOptions.length)],
+            emitter: colorOptions[Math.floor(Math.random() * colorOptions.length)]
         };
         
         this.init();
@@ -81,11 +93,11 @@ class LightsaberMaker {
         // Create a group to hold all lightsaber parts
         this.lightsaberGroup = new BABYLON.TransformNode('lightsaberGroup', this.scene);
         
-        // Create all parts
-        this.createPommel('basic');
-        this.createGrip('smooth');
-        this.createEmitter('standard');
-        this.createBlade('blue');
+        // Create all parts with random selections
+        this.createPommel(this.currentPommelType);
+        this.createGrip(this.currentGripType);
+        this.createEmitter(this.currentEmitterType);
+        this.createBlade(this.currentBladeColor);
     }
 
     getPartColor(section, colorType) {
@@ -95,7 +107,7 @@ class LightsaberMaker {
             silver: new BABYLON.Color3(0.7, 0.7, 0.8),
             black: new BABYLON.Color3(0.1, 0.1, 0.1),
             bronze: new BABYLON.Color3(0.6, 0.4, 0.2),
-            brown: new BABYLON.Color3(0.4, 0.2, 0.1),
+            brown: new BABYLON.Color3(0.6, 0.35, 0.15), // More realistic leather brown
             chrome: new BABYLON.Color3(0.9, 0.9, 1.0)
         };
         return colors[colorType] || colors.gray;
@@ -166,11 +178,6 @@ class LightsaberMaker {
         material.diffuseColor = baseColor;
         material.specularColor = new BABYLON.Color3(0.6, 0.6, 0.6);
         
-        // Override for specific types if needed
-        if (type === 'ceremonial' && this.partColors.pommel === 'gray') {
-            material.diffuseColor = new BABYLON.Color3(0.6, 0.5, 0.2); // Keep gold for ceremonial if gray selected
-        }
-        
         if (pommel.material !== undefined) {
             pommel.material = material;
         } else {
@@ -201,9 +208,9 @@ class LightsaberMaker {
                 baseGrip.parent = grip;
                 
                 // Create base material (always gray)
-                const baseMaterial = new BABYLON.StandardMaterial('baseGripMaterial', this.scene);
-                baseMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-                baseGrip.material = baseMaterial;
+                const ribbedBaseMaterial = new BABYLON.StandardMaterial('baseGripMaterial', this.scene);
+                ribbedBaseMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+                baseGrip.material = ribbedBaseMaterial;
                 
                 // Add ribbed rings with selected color
                 for (let i = 0; i < 8; i++) {
@@ -216,11 +223,109 @@ class LightsaberMaker {
                 }
                 break;
             case 'wrapped':
-                grip = BABYLON.MeshBuilder.CreateCylinder('grip', {
+                grip = new BABYLON.TransformNode('wrappedGrip', this.scene);
+                
+                // Base cylinder (metal underneath)
+                const baseWrap = BABYLON.MeshBuilder.CreateCylinder('baseWrap', {
                     height: 2,
-                    diameter: 0.65,
-                    tessellation: 16
+                    diameter: 0.58
                 }, this.scene);
+                baseWrap.parent = grip;
+                
+                // Create base material for the metal underneath
+                const wrappedBaseMaterial = new BABYLON.StandardMaterial('baseWrapMaterial', this.scene);
+                wrappedBaseMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+                baseWrap.material = wrappedBaseMaterial;
+                
+                // Create continuous spiraling cloth wrap
+                const wrapHeight = 2;
+                const wrapRadius = 0.305; // Slightly larger than base radius to sit on surface
+                const stripWidth = 0.12;
+                const stripHeight = 0.01; // Much flatter
+                const wrapsCount = 15; // More wraps for better coverage
+                const segmentsPerWrap = 12; // Fewer segments for cleaner look
+                
+                for (let wrap = 0; wrap < wrapsCount; wrap++) {
+                    for (let segment = 0; segment < segmentsPerWrap; segment++) {
+                        const totalSegment = wrap * segmentsPerWrap + segment;
+                        const angle = (segment / segmentsPerWrap) * Math.PI * 2;
+                        const yPos = -1 + (totalSegment / (wrapsCount * segmentsPerWrap)) * wrapHeight;
+                        
+                        // Create flatter rectangular strip segment
+                        const stripSegment = BABYLON.MeshBuilder.CreateBox(`wrapSegment${totalSegment}`, {
+                            width: stripWidth,
+                            height: stripHeight,
+                            depth: 0.35 // Reduced depth for flatter look
+                        }, this.scene);
+                        
+                        // Position the segment to lay flat against the cylinder
+                        stripSegment.position.x = Math.cos(angle) * wrapRadius;
+                        stripSegment.position.z = Math.sin(angle) * wrapRadius;
+                        stripSegment.position.y = yPos;
+                        
+                        // Rotate to follow the curve with minimal randomness for cleaner look
+                        stripSegment.rotation.y = angle + Math.PI / 2;
+                        stripSegment.rotation.x = (Math.random() - 0.5) * 0.03; // Very slight random tilt
+                        stripSegment.rotation.z = (Math.random() - 0.5) * 0.02; // Very slight random twist
+                        
+                        // Minimal position randomness to keep it flat
+                        stripSegment.position.y += (Math.random() - 0.5) * 0.005;
+                        
+                        stripSegment.parent = grip;
+                        
+                        // Create individual material with aging/wear variations
+                        const stripMaterial = new BABYLON.StandardMaterial(`stripMaterial${totalSegment}`, this.scene);
+                        const baseColor = this.getPartColor('grip', this.partColors.grip);
+                        
+                        // Add wear and aging variations
+                        const wearFactor = 0.9 + Math.random() * 0.2; // Less extreme wear variation
+                        const dirtFactor = 0.95 + Math.random() * 0.1; // Subtle dirt variation
+                        
+                        stripMaterial.diffuseColor = new BABYLON.Color3(
+                            Math.min(baseColor.r * wearFactor * dirtFactor, 1),
+                            Math.min(baseColor.g * wearFactor * dirtFactor, 1),
+                            Math.min(baseColor.b * wearFactor * dirtFactor, 1)
+                        );
+                        
+                        stripMaterial.specularColor = new BABYLON.Color3(0.05, 0.05, 0.05); // Very low shine for cloth
+                        stripMaterial.roughness = 0.9; // Very rough cloth texture
+                        
+                        stripSegment.material = stripMaterial;
+                    }
+                }
+                
+                // Add some loose hanging ends for realism
+                for (let i = 0; i < 2; i++) {
+                    const looseEnd = BABYLON.MeshBuilder.CreateBox(`looseEnd${i}`, {
+                        width: 0.06,
+                        height: 0.015,
+                        depth: 0.15 + Math.random() * 0.1
+                    }, this.scene);
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    looseEnd.position.x = Math.cos(angle) * 0.32;
+                    looseEnd.position.z = Math.sin(angle) * 0.32;
+                    looseEnd.position.y = -0.9 + Math.random() * 0.15;
+                    
+                    looseEnd.rotation.y = angle + (Math.random() - 0.5) * 0.3;
+                    looseEnd.rotation.x = (Math.random() - 0.5) * 0.2;
+                    looseEnd.rotation.z = (Math.random() - 0.5) * 0.15;
+                    
+                    looseEnd.parent = grip;
+                    
+                    // Material for loose ends
+                    const endMaterial = new BABYLON.StandardMaterial(`endMaterial${i}`, this.scene);
+                    const baseColor = this.getPartColor('grip', this.partColors.grip);
+                    endMaterial.diffuseColor = new BABYLON.Color3(
+                        baseColor.r * 0.85,
+                        baseColor.g * 0.85,
+                        baseColor.b * 0.85
+                    );
+                    endMaterial.specularColor = new BABYLON.Color3(0.05, 0.05, 0.05);
+                    endMaterial.roughness = 0.95;
+                    
+                    looseEnd.material = endMaterial;
+                }
                 break;
             case 'segmented':
                 grip = new BABYLON.TransformNode('segmentedGrip', this.scene);
@@ -272,16 +377,14 @@ class LightsaberMaker {
         const baseColor = this.getPartColor('grip', this.partColors.grip);
         material.diffuseColor = baseColor;
         
-        if (type === 'wrapped') {
-            material.diffuseColor = new BABYLON.Color3(0.2, 0.1, 0.05);
-        }
-        
         if (grip.material !== undefined) {
             grip.material = material;
         } else {
             grip.getChildMeshes().forEach(child => {
-                // Skip base parts for ribbed and segmented
-                if (child.name === 'baseGrip' || child.name === 'connector') {
+                // Skip base parts and wrapped segments (they have their own materials)
+                if (child.name === 'baseGrip' || child.name === 'connector' || 
+                    child.name.startsWith('wrap') || child.name === 'baseWrap' ||
+                    child.name.startsWith('stripSegment') || child.name.startsWith('looseEnd')) {
                     return;
                 }
                 child.material = material;
@@ -718,6 +821,15 @@ class LightsaberMaker {
     }
 
     setupMenu() {
+        // Set initial active buttons based on random selections
+        this.setActiveButton('pommel', this.currentPommelType);
+        this.setActiveButton('grip', this.currentGripType);
+        this.setActiveButton('emitter', this.currentEmitterType);
+        this.setActiveButton('blade', this.currentBladeColor);
+        this.setActiveButton('pommel-color', this.partColors.pommel);
+        this.setActiveButton('grip-color', this.partColors.grip);
+        this.setActiveButton('emitter-color', this.partColors.emitter);
+
         const menuSections = document.querySelectorAll('.part-buttons');
         
         menuSections.forEach(section => {
@@ -743,6 +855,18 @@ class LightsaberMaker {
         powerToggle.addEventListener('click', () => {
             this.toggleBlade();
         });
+    }
+
+    setActiveButton(section, type) {
+        // Remove active class from all buttons in section
+        const buttons = document.querySelectorAll(`[data-section="${section}"] .part-button`);
+        buttons.forEach(btn => btn.classList.remove('active'));
+        
+        // Add active class to the selected button
+        const activeButton = document.querySelector(`[data-section="${section}"] [data-type="${type}"]`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
     }
 
     updatePart(section, type) {

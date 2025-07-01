@@ -17,4 +17,10 @@ export const boredomCures = [
     description: "A clicker game where you evolve technology.",
     icon: "⚡",
   },
+  {
+    url: "./games/saber_maker/index.html",
+    name: "Saber Maker",
+    description: "A game to make your own lightsaber",
+    icon: "|",
+  },
 ];
