@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Minecraft 3D</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: white;
+        z-index: 10;
+        pointer-events: none;
+      }
+      #hotbar {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        padding: 6px 10px;
+        border-radius: 8px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+        font-family: sans-serif;
+      }
+      .hotbar-slot {
+        color: white;
+        font-size: 16px;
+        padding: 4px 8px;
+        border: 2px solid white;
+        border-radius: 4px;
+      }
+      .active {
+        background: white;
+        color: black;
+      }
+      #health {
+        position: absolute;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 20px;
+        color: white;
+        font-family: sans-serif;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 4px 10px;
+        border-radius: 6px;
+        z-index: 10;
+      }
+      #damageOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 0, 0, 0.3);
+        z-index: 9;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="crosshair">+</div>
+    <div id="health">Health: 20</div>
+    <div id="damageOverlay"></div>
+    <div id="hotbar">
+      <div class="hotbar-slot active" data-type="grass">1 Grass</div>
+      <div class="hotbar-slot" data-type="dirt">2 Dirt</div>
+      <div class="hotbar-slot" data-type="stone">3 Stone</div>
+      <div class="hotbar-slot" data-type="log">4 Log</div>
+      <div class="hotbar-slot" data-type="leaves">5 Leaves</div>
+      <div class="hotbar-slot" data-type="sword">6 Sword</div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script>
+      function createSword(scene) {
+        const sword = new BABYLON.TransformNode("sword", scene);
+
+        // Blade
+        const blade = BABYLON.MeshBuilder.CreateBox(
+          "blade",
+          { height: 0.6, width: 0.05, depth: 0.1 },
+          scene
+        );
+        blade.material = materials.sword;
+        blade.parent = sword;
+        blade.position.y = 0.3;
+
+        // Hilt
+        const hilt = BABYLON.MeshBuilder.CreateBox(
+          "hilt",
+          { height: 0.2, width: 0.1, depth: 0.1 },
+          scene
+        );
+        hilt.material = materials.sword;
+        hilt.parent = sword;
+        hilt.position.y = -0.1;
+
+        // Crossguard
+        const guard = BABYLON.MeshBuilder.CreateBox(
+          "guard",
+          { height: 0.05, width: 0.3, depth: 0.1 },
+          scene
+        );
+        guard.material = materials.sword;
+        guard.parent = sword;
+        guard.position.y = 0.05;
+
+        return sword;
+      }
+
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const scene = new BABYLON.Scene(engine);
+      scene.gravity = new BABYLON.Vector3(0, -0.2, 0);
+      scene.collisionsEnabled = true;
+      scene.clearColor = new BABYLON.Color3(0.5, 0.8, 1);
+
+      const camera = new BABYLON.UniversalCamera(
+        "camera",
+        new BABYLON.Vector3(0, 5, 0),
+        scene
+      );
+      camera.attachControl(canvas, true);
+      camera.speed = 0.5;
+      camera.applyGravity = false;
+      camera.checkCollisions = true;
+      camera.ellipsoid = new BABYLON.Vector3(0.5, 1, 0.5);
+      camera.minZ = 0.2;
+
+      camera.keysUp.push(87);
+      camera.keysDown.push(83);
+      camera.keysLeft.push(65);
+      camera.keysRight.push(68);
+      camera.inputs.attached.mouse.angularSensibility = 5000;
+      canvas.addEventListener("click", () => canvas.requestPointerLock());
+
+      const light = new BABYLON.HemisphericLight(
+        "light",
+        new BABYLON.Vector3(1, 1, 0),
+        scene
+      );
+
+      const materials = {};
+      const colors = {
+        grass: [0.2, 0.8, 0.2],
+        dirt: [0.55, 0.27, 0.07],
+        stone: [0.5, 0.5, 0.5],
+        log: [0.4, 0.2, 0],
+        leaves: [0.1, 0.6, 0.1],
+        zombie: [0.2, 0.4, 0.2],
+        sword: [0.9, 0.9, 0.9],
+      };
+
+      for (let key in colors) {
+        const mat = new BABYLON.StandardMaterial(key, scene);
+        mat.diffuseColor = new BABYLON.Color3(...colors[key]);
+        materials[key] = mat;
+      }
+
+      const blocks = {};
+      const createBlock = (x, y, z, type) => {
+        const box = BABYLON.MeshBuilder.CreateBox("block", { size: 1 }, scene);
+        box.position.set(x, y, z);
+        box.material = materials[type];
+        box.checkCollisions = true;
+        blocks[`${x},${y},${z}`] = box;
+      };
+
+      const worldSize = 20;
+      for (let x = -worldSize; x <= worldSize; x++) {
+        for (let z = -worldSize; z <= worldSize; z++) {
+          createBlock(x, 0, z, "grass");
+          createBlock(x, -1, z, "dirt");
+        }
+      }
+
+      const placeTree = (x, z) => {
+        for (let y = 1; y <= 4; y++) createBlock(x, y, z, "log");
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            for (let dy = 0; dy <= 1; dy++) {
+              if (!(dx === 0 && dz === 0 && dy === 0)) {
+                createBlock(x + dx, 4 + dy, z + dz, "leaves");
+              }
+            }
+          }
+        }
+      };
+      for (let i = 0; i < 20; i++)
+        placeTree(
+          Math.floor(Math.random() * 40 - 20),
+          Math.floor(Math.random() * 40 - 20)
+        );
+
+      let selectedBlockType = "grass";
+      const slots = document.querySelectorAll(".hotbar-slot");
+      window.addEventListener("keydown", (e) => {
+        const n = parseInt(e.key);
+        if (n >= 1 && n <= 6) {
+          selectedBlockType = slots[n - 1].dataset.type;
+          slots.forEach((s) => s.classList.remove("active"));
+          slots[n - 1].classList.add("active");
+          swordMesh.setEnabled(selectedBlockType === "sword");
+        }
+      });
+
+      let yVelocity = 0;
+      const GRAVITY = -0.03;
+      const JUMP_FORCE = 0.3;
+      let isOnGround = false;
+      let pendingJump = false;
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space") pendingJump = true;
+      });
+
+      let health = 20;
+      const healthDisplay = document.getElementById("health");
+      const damageOverlay = document.getElementById("damageOverlay");
+
+      const updateHealthDisplay = () => {
+        healthDisplay.textContent = `Health: ${health}`;
+      };
+
+      const showDamageEffect = () => {
+        damageOverlay.style.display = "block";
+        setTimeout(() => {
+          damageOverlay.style.display = "none";
+        }, 200);
+      };
+
+      const gameOver = () => {
+        alert("You died! Restarting game...");
+        location.reload();
+      };
+
+      scene.registerBeforeRender(() => {
+        const origin = camera.position.clone();
+        origin.y -= 1.0;
+        const ray = new BABYLON.Ray(origin, new BABYLON.Vector3(0, -1, 0), 1.0);
+        const hit = scene.pickWithRay(ray, (mesh) => mesh.checkCollisions);
+        isOnGround = hit.hit;
+
+        if (pendingJump && isOnGround) {
+          yVelocity = JUMP_FORCE;
+          pendingJump = false;
+        }
+
+        if (!isOnGround) yVelocity += GRAVITY;
+        else if (yVelocity < 0) yVelocity = 0;
+
+        camera.position.y += yVelocity;
+
+        zombies.forEach((zombie) => {
+          const direction = camera.position.subtract(zombie.position);
+          const distance = direction.length();
+          if (distance > 0.5) {
+            direction.normalize();
+            zombie.moveWithCollisions(direction.scale(0.02));
+          }
+
+          if (distance < 1.5 && zombie._canAttack !== false) {
+            health -= 4;
+            updateHealthDisplay();
+            showDamageEffect();
+            if (health <= 0) gameOver();
+            zombie._canAttack = false;
+            setTimeout(() => (zombie._canAttack = true), 1000);
+          }
+        });
+      });
+
+      const swordMesh = createSword(scene);
+      swordMesh.parent = camera;
+      swordMesh.position = new BABYLON.Vector3(0.3, -0.3, 1.2);
+      swordMesh.rotation = new BABYLON.Vector3(0, 0.5, 0.1);
+      swordMesh.setEnabled(false);
+
+      scene.onPointerDown = function (evt) {
+        if (selectedBlockType === "sword") {
+          const ray = camera.getForwardRay(4);
+          const hit = scene.pickWithRay(ray, (mesh) => mesh.name === "zombie");
+          if (hit.hit && hit.pickedMesh.health !== undefined) {
+            hit.pickedMesh.health -= 4;
+
+            // Flash red
+            const originalColor = hit.pickedMesh.material.diffuseColor.clone();
+            hit.pickedMesh.material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+            setTimeout(() => {
+              if (hit.pickedMesh && hit.pickedMesh.material)
+                hit.pickedMesh.material.diffuseColor = originalColor;
+            }, 100);
+
+            // Remove if dead
+            if (hit.pickedMesh.health <= 0) {
+              zombies.splice(zombies.indexOf(hit.pickedMesh), 1);
+              hit.pickedMesh.dispose();
+            }
+          }
+          return;
+        }
+
+        // Place/break block logic (unchanged)
+        const ray = camera.getForwardRay(8);
+        const hit = scene.pickWithRay(ray, (mesh) => mesh.name === "block");
+        if (hit.hit) {
+          const pos = hit.pickedMesh.position;
+          const normal = hit.getNormal(true);
+          const distance = BABYLON.Vector3.Distance(camera.position, pos);
+          if (evt.button === 0) {
+            hit.pickedMesh.dispose();
+            delete blocks[`${pos.x},${pos.y},${pos.z}`];
+          } else if (evt.button === 2 && distance <= 8) {
+            const x = Math.round(pos.x + normal.x);
+            const y = Math.round(pos.y + normal.y);
+            const z = Math.round(pos.z + normal.z);
+            const key = `${x},${y},${z}`;
+            if (!blocks[key]) createBlock(x, y, z, selectedBlockType);
+          }
+        }
+      };
+
+      canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+      const zombies = [];
+      const spawnZombie = () => {
+        const x = Math.floor(Math.random() * 40 - 20);
+        const z = Math.floor(Math.random() * 40 - 20);
+        const zombie = BABYLON.MeshBuilder.CreateBox(
+          "zombie",
+          { size: 1 },
+          scene
+        );
+        zombie.position.set(x, 1, z);
+
+        // Clone the zombie material
+        const zombieMat = new BABYLON.StandardMaterial("zombieMat", scene);
+        zombieMat.diffuseColor = new BABYLON.Color3(...colors.zombie);
+        zombie.material = zombieMat;
+
+        zombie.checkCollisions = true;
+        zombie.health = 10;
+        zombies.push(zombie);
+      };
+
+      setInterval(spawnZombie, 3000);
+
+      engine.runRenderLoop(() => scene.render());
+      window.addEventListener("resize", () => engine.resize());
+    </script>
+  </body>
+</html>
