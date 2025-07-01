@@ -4,204 +4,69 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TechEvo Clicker</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px;
-        color: white;
-      }
-
-      .game-container {
-        max-width: 1200px;
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 400px;
-        gap: 20px;
-        margin-top: 20px;
-      }
-
-      .main-area {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      }
-
-      .click-area {
-        width: 200px;
-        height: 200px;
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-        border-radius: 50%;
-        border: none;
-        margin: 20px auto;
-        cursor: pointer;
-        transition: all 0.1s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 48px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      }
-
-      .click-area:hover {
-        transform: scale(1.05);
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-      }
-
-      .click-area:active {
-        transform: scale(0.95);
-      }
-
-      .stats {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
-      }
-
-      .upgrades {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 20px;
-        max-height: 600px;
-        overflow-y: auto;
-      }
-
-      .upgrade-item {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 10px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-      }
-
-      .upgrade-item:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-
-      .upgrade-item.affordable {
-        border-color: #4ecdc4;
-        box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
-      }
-
-      .upgrade-item.unaffordable {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .upgrade-name {
-        font-weight: bold;
-        font-size: 16px;
-        margin-bottom: 5px;
-      }
-
-      .upgrade-description {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 8px;
-        line-height: 1.4;
-      }
-
-      .upgrade-cost {
-        font-size: 14px;
-        color: #4ecdc4;
-        font-weight: bold;
-      }
-
-      .upgrade-owned {
-        font-size: 12px;
-        color: #feca57;
-        margin-top: 5px;
-      }
-
-      h1 {
-        text-align: center;
-        margin-bottom: 10px;
-        font-size: 2.5em;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-      }
-
-      .subtitle {
-        text-align: center;
-        margin-bottom: 20px;
-        opacity: 0.8;
-        font-size: 1.1em;
-      }
-
-      .points-display {
-        font-size: 2em;
-        font-weight: bold;
-        color: #4ecdc4;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-      }
-
-      .pps-display {
-        font-size: 1.2em;
-        color: #feca57;
-        margin-top: 10px;
-      }
-
-      .era-display {
-        font-size: 1.5em;
-        color: #ff6b6b;
-        margin-top: 15px;
-        font-weight: bold;
-      }
-
-      .floating-text {
-        position: absolute;
-        pointer-events: none;
-        font-weight: bold;
-        font-size: 24px;
-        color: #4ecdc4;
-        animation: floatUp 1s ease-out forwards;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-      }
-
-      @keyframes floatUp {
-        0% {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(-100px);
-        }
-      }
-
-      @media (max-width: 768px) {
-        .game-container {
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
-
-        .click-area {
-          width: 150px;
-          height: 150px;
-          font-size: 36px;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <button class="reset-button" id="resetButton" title="Reset All Progress">
+      🗑️
+    </button>
+    <button
+      class="privacy-button"
+      id="privacyButton"
+      title="Privacy Information"
+    >
+      🔒
+    </button>
+
+    <!-- Privacy Modal -->
+    <div class="privacy-modal" id="privacyModal">
+      <div class="privacy-content">
+        <button class="privacy-close" id="privacyClose">×</button>
+        <h2>🔒 Privacy & Data Storage</h2>
+        <p><strong>Your privacy is important to us!</strong></p>
+
+        <p>
+          This game uses <strong>local storage</strong> to save your progress
+          directly on your device. Here's what you need to know:
+        </p>
+
+        <ul>
+          <li>
+            <strong>What we store:</strong> Only your game progress (points,
+            upgrades, prestige levels)
+          </li>
+          <li>
+            <strong>Where it's stored:</strong> Locally on your device only -
+            never sent to any servers
+          </li>
+          <li>
+            <strong>Who can access it:</strong> Only you, on this device and
+            browser
+          </li>
+          <li>
+            <strong>No tracking:</strong> We don't track your activity or
+            collect personal information
+          </li>
+          <li>
+            <strong>No cookies:</strong> We don't use cookies for tracking or
+            advertising
+          </li>
+        </ul>
+
+        <p>
+          You can clear your saved data anytime using the reset button (🗑️) or
+          by clearing your browser's local storage.
+        </p>
+
+        <p>
+          <strong
+            >This storage is essential for the game to remember your progress
+            between sessions.</strong
+          >
+        </p>
+      </div>
+    </div>
+
     <h1>🚀 Tech Evolution Clicker</h1>
     <p class="subtitle">Click to advance human technology through the ages!</p>
 
@@ -210,7 +75,18 @@
         <div class="stats">
           <div class="points-display" id="points">0 Innovation Points</div>
           <div class="pps-display" id="pps">0 points per second</div>
-          <div class="era-display" id="era">Stone Age</div>
+          <div class="era-display">
+            <div class="era-name" id="eraName">🗿 Stone Age</div>
+            <div class="era-progress-container" id="eraProgressContainer">
+              <div class="era-progress-label" id="eraProgressLabel">
+                Progress to Neolithic
+              </div>
+              <div class="era-progress-bar">
+                <div class="era-progress-fill" id="eraProgressFill"></div>
+                <div class="era-progress-text" id="eraProgressText">0%</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <button class="click-area" id="clickButton">🔥</button>
@@ -223,7 +99,24 @@
 
       <div class="upgrades">
         <h3 style="margin-bottom: 15px">🛠️ Technological Upgrades</h3>
-        <div id="upgradesList"></div>
+
+        <div class="upgrade-tabs">
+          <button class="tab-button active" id="normalTab">🔬 Research</button>
+          <button class="tab-button" id="specialTab">⭐ Special</button>
+          <button class="tab-button" id="prestigeTab">👑 Prestige</button>
+        </div>
+
+        <div class="tab-content active" id="normalContent">
+          <div id="normalUpgradesList"></div>
+        </div>
+
+        <div class="tab-content" id="specialContent">
+          <div id="specialUpgradesList"></div>
+        </div>
+
+        <div class="tab-content" id="prestigeContent">
+          <div id="prestigeInfo"></div>
+        </div>
       </div>
     </div>
 
@@ -233,11 +126,20 @@
           this.points = 0;
           this.pointsPerSecond = 0;
           this.clickPower = 1;
+          this.highestEraReached = 0; // Track the highest era index reached
+          this.luckLevel = 0; // Track luck upgrade level
+          this.efficiencyLevel = 0; // Track efficiency upgrade level
+          this.automationLevel = 0; // Track automation upgrade level
+          this.multiplierLevel = 0; // Track multiplier upgrade level
+          this.timeWarpLevel = 0; // Track time warp upgrade level
+          this.activeTab = "normal"; // Track which tab is active
+          this.prestigeCount = 0; // Track number of prestiges
+          this.prestigeRequirement = 15000000; // Cost to prestige (1.5x final upgrade cost)
 
           this.upgrades = [
             {
               id: "wheel",
-              name: "🛞 The Wheel",
+              name: "⚫ The Wheel",
               description:
                 "Revolutionary circular invention that changed transportation forever. Around 3500 BCE, this simple yet genius device reduced friction and made moving heavy objects much easier.",
               baseCost: 10,
@@ -254,6 +156,61 @@
               pointsPerSecond: 0.3,
               owned: 0,
               era: "Stone Age",
+            },
+            {
+              id: "luck",
+              name: "🍀 Lucky Discovery",
+              description:
+                "Sometimes the greatest breakthroughs happen by accident! Each level increases your chance of making a serendipitous discovery while clicking by 1%. Bonus scales with your current era!",
+              baseCost: 50,
+              pointsPerSecond: 0,
+              owned: 0,
+              era: "Stone Age",
+              isSpecial: true,
+            },
+            {
+              id: "efficiency",
+              name: "⚡ Efficiency Engine",
+              description:
+                "Optimize your research processes! Each level increases ALL upgrade effectiveness by 2%. This compounds with itself, making later upgrades much more powerful!",
+              baseCost: 500,
+              pointsPerSecond: 0,
+              owned: 0,
+              era: "Industrial Age",
+              isSpecial: true,
+            },
+            {
+              id: "automation",
+              name: "🤖 Research Automation",
+              description:
+                "Automate your discovery process! Each level gives you 0.5% of your current points per second as bonus points per click. More progress = stronger clicks!",
+              baseCost: 2500,
+              pointsPerSecond: 0,
+              owned: 0,
+              era: "Digital Age",
+              isSpecial: true,
+            },
+            {
+              id: "multiplier",
+              name: "🎯 Focus Multiplier",
+              description:
+                "Channel your focus for breakthrough moments! Each level gives a 1% chance per click to gain 10x points for that click. Stack with luck for incredible combos!",
+              baseCost: 10000,
+              pointsPerSecond: 0,
+              owned: 0,
+              era: "Information Age",
+              isSpecial: true,
+            },
+            {
+              id: "timeWarp",
+              name: "⏰ Time Acceleration",
+              description:
+                "Bend time itself to accelerate research! Each level increases your points per second by 5% of your total click power. Active clicking becomes more valuable!",
+              baseCost: 50000,
+              pointsPerSecond: 0,
+              owned: 0,
+              era: "AI Age",
+              isSpecial: true,
             },
             {
               id: "agriculture",
@@ -448,14 +405,106 @@
             .getElementById("clickButton")
             .addEventListener("click", (e) => this.handleClick(e));
           document
-            .getElementById("upgradesList")
+            .getElementById("normalUpgradesList")
             .addEventListener("click", (e) => this.handleUpgradeClick(e));
+          document
+            .getElementById("specialUpgradesList")
+            .addEventListener("click", (e) => this.handleUpgradeClick(e));
+          document
+            .getElementById("normalTab")
+            .addEventListener("click", () => this.switchTab("normal"));
+          document
+            .getElementById("specialTab")
+            .addEventListener("click", () => this.switchTab("special"));
+          document
+            .getElementById("prestigeTab")
+            .addEventListener("click", () => this.switchTab("prestige"));
+          document
+            .getElementById("resetButton")
+            .addEventListener("click", () => this.confirmReset());
+          document
+            .getElementById("privacyButton")
+            .addEventListener("click", () => this.showPrivacyModal());
+          document
+            .getElementById("privacyClose")
+            .addEventListener("click", () => this.hidePrivacyModal());
+          document
+            .getElementById("privacyModal")
+            .addEventListener("click", (e) => {
+              if (e.target.id === "privacyModal") this.hidePrivacyModal();
+            });
         }
 
         handleClick(e) {
-          this.points += this.clickPower;
+          const prestigeBonus = this.getPrestigeBonus();
+          const efficiencyBonus = this.getEfficiencyBonus();
+          const automationBonus = this.getAutomationBonus();
+
+          let basePower = Math.floor(this.clickPower * prestigeBonus);
+          let pointsGained = basePower;
+          let isLucky = false;
+          let isMultiplied = false;
+
+          // Apply automation bonus (0.5% of PPS per level)
+          if (this.automationLevel > 0) {
+            const autoBonus = Math.floor(
+              this.pointsPerSecond * (this.automationLevel * 0.005)
+            );
+            pointsGained += autoBonus;
+          }
+
+          // Check for luck bonus (1% per level, max 50%)
+          if (this.luckLevel > 0) {
+            const luckChance = Math.min(this.luckLevel * 1, 50); // 1% per level, max 50%
+            if (Math.random() * 100 < luckChance) {
+              const era = this.getCurrentEra();
+              const eraIndex = this.eras.findIndex((e) => e.name === era.name);
+              const bonusMultiplier = Math.max(1, eraIndex + 1); // Era-based multiplier
+              const luckyBonus = Math.floor(
+                basePower *
+                  bonusMultiplier *
+                  (2 + Math.floor(this.luckLevel / 10)) *
+                  efficiencyBonus
+              );
+              pointsGained += luckyBonus;
+              isLucky = true;
+
+              // Show special lucky effect
+              this.showFloatingText(
+                e.target,
+                `🍀 LUCKY! +${luckyBonus}`,
+                "#feca57"
+              );
+            }
+          }
+
+          // Check for multiplier bonus (1% chance per level for 10x points)
+          if (this.multiplierLevel > 0) {
+            const multiplierChance = this.multiplierLevel * 1; // 1% per level
+            if (Math.random() * 100 < multiplierChance) {
+              pointsGained *= 10;
+              isMultiplied = true;
+
+              // Show special multiplier effect
+              this.showFloatingText(
+                e.target,
+                `🎯 10X MULTIPLIER! ×${pointsGained}`,
+                "#ff6b6b"
+              );
+            }
+          }
+
+          // Apply efficiency bonus to final points
+          pointsGained = Math.floor(pointsGained * efficiencyBonus);
+
+          this.points += pointsGained;
           this.updateDisplay();
-          this.showFloatingText(e.target, `+${this.clickPower}`);
+          this.showFloatingText(
+            e.target,
+            `+${Math.floor(basePower * efficiencyBonus)}`,
+            isLucky || isMultiplied ? "#4ecdc4" : "#4ecdc4"
+          );
+          this.createClickEffects(e, isLucky, isMultiplied);
           this.saveGame();
         }
 
@@ -471,28 +520,360 @@
           const upgrade = this.upgrades.find((u) => u.id === upgradeId);
           if (!upgrade) return;
 
+          // Check if upgrade is unlocked (era requirement)
+          if (!this.isUpgradeUnlocked(upgrade)) {
+            this.showFloatingText(
+              document.getElementById("clickButton"),
+              `🔒 Requires ${upgrade.era}!`,
+              "#ff6b6b"
+            );
+            return;
+          }
+
           const cost = this.getUpgradeCost(upgrade);
           if (this.points >= cost) {
             this.points -= cost;
             upgrade.owned++;
-            this.pointsPerSecond += upgrade.pointsPerSecond;
+
+            if (upgrade.isSpecial) {
+              // Update special upgrade levels
+              switch (upgrade.id) {
+                case "luck":
+                  this.luckLevel = upgrade.owned;
+                  break;
+                case "efficiency":
+                  this.efficiencyLevel = upgrade.owned;
+                  break;
+                case "automation":
+                  this.automationLevel = upgrade.owned;
+                  break;
+                case "multiplier":
+                  this.multiplierLevel = upgrade.owned;
+                  break;
+                case "timeWarp":
+                  this.timeWarpLevel = upgrade.owned;
+                  this.recalculatePointsPerSecond(); // Recalculate PPS when time warp changes
+                  break;
+              }
+            } else {
+              const prestigeBonus = this.getPrestigeBonus();
+              const efficiencyBonus = this.getEfficiencyBonus();
+              this.pointsPerSecond +=
+                upgrade.pointsPerSecond * prestigeBonus * efficiencyBonus;
+            }
+
             this.updateDisplay();
-            this.renderUpgrades();
             this.saveGame();
           }
         }
 
         getUpgradeCost(upgrade) {
-          return Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.owned));
+          // Special upgrades have much higher cost scaling (1.5x vs 1.15x for normal)
+          const multiplier = upgrade.isSpecial ? 1.5 : 1.15;
+          return Math.floor(
+            upgrade.baseCost * Math.pow(multiplier, upgrade.owned)
+          );
+        }
+
+        switchTab(tabName) {
+          this.activeTab = tabName;
+
+          // Update tab buttons
+          document.getElementById("normalTab").classList.remove("active");
+          document.getElementById("specialTab").classList.remove("active");
+          document.getElementById("prestigeTab").classList.remove("active");
+          document.getElementById(tabName + "Tab").classList.add("active");
+
+          // Update tab content
+          document.getElementById("normalContent").classList.remove("active");
+          document.getElementById("specialContent").classList.remove("active");
+          document.getElementById("prestigeContent").classList.remove("active");
+          document.getElementById(tabName + "Content").classList.add("active");
+
+          // Render prestige content if needed
+          if (tabName === "prestige") {
+            this.renderPrestige();
+          }
+        }
+
+        getPrestigeBonus() {
+          // Each prestige gives +10% to click power and points per second
+          return 1 + this.prestigeCount * 0.1;
+        }
+
+        getEfficiencyBonus() {
+          // Each efficiency level gives +2% to all upgrades (multiplicative)
+          return Math.pow(1.02, this.efficiencyLevel);
+        }
+
+        getAutomationBonus() {
+          // Automation gives 0.5% of PPS as bonus click power
+          return this.automationLevel * 0.005 * this.pointsPerSecond;
+        }
+
+        isUpgradeUnlocked(upgrade) {
+          // Check if the player has reached the required era for this upgrade
+          const currentEra = this.getCurrentEra();
+          const currentEraIndex = this.eras.findIndex(
+            (era) => era.name === currentEra.name
+          );
+          const requiredEraIndex = this.eras.findIndex(
+            (era) => era.name === upgrade.era
+          );
+
+          return currentEraIndex >= requiredEraIndex;
+        }
+
+        recalculatePointsPerSecond() {
+          // Recalculate PPS from scratch including all bonuses
+          const prestigeBonus = this.getPrestigeBonus();
+          const efficiencyBonus = this.getEfficiencyBonus();
+
+          let totalPPS = 0;
+          this.upgrades.forEach((upgrade) => {
+            if (!upgrade.isSpecial && upgrade.owned > 0) {
+              totalPPS +=
+                upgrade.pointsPerSecond *
+                upgrade.owned *
+                prestigeBonus *
+                efficiencyBonus;
+            }
+          });
+
+          // Add time warp bonus (5% of click power per level)
+          if (this.timeWarpLevel > 0) {
+            const timeWarpBonus =
+              this.clickPower * prestigeBonus * (this.timeWarpLevel * 0.05);
+            totalPPS += timeWarpBonus;
+          }
+
+          this.pointsPerSecond = totalPPS;
+        }
+
+        canPrestige() {
+          return this.points >= this.prestigeRequirement;
+        }
+
+        doPrestige() {
+          if (!this.canPrestige()) return;
+
+          // Increment prestige count
+          this.prestigeCount++;
+
+          // Reset game state
+          this.points = 0;
+          this.pointsPerSecond = 0;
+          this.highestEraReached = 0;
+          this.luckLevel = 0;
+          this.efficiencyLevel = 0;
+          this.automationLevel = 0;
+          this.multiplierLevel = 0;
+          this.timeWarpLevel = 0;
+
+          // Reset all upgrades
+          this.upgrades.forEach((upgrade) => {
+            upgrade.owned = 0;
+          });
+
+          // Update display
+          this.updateDisplay();
+          this.saveGame();
+
+          // Show prestige effect
+          this.showFloatingText(
+            document.getElementById("clickButton"),
+            `🎉 PRESTIGE ${this.prestigeCount}! +${
+              this.prestigeCount * 10
+            }% BONUS!`,
+            "#feca57"
+          );
+        }
+
+        confirmReset() {
+          const confirmed = confirm(
+            "Are you sure you want to reset ALL progress?\n\nThis will delete:\n• All Innovation Points\n• All Upgrades\n• All Prestige levels\n• Era progress\n\nThis action cannot be undone!"
+          );
+
+          if (confirmed) {
+            this.resetAllProgress();
+          }
+        }
+
+        resetAllProgress() {
+          // Reset everything to initial state
+          this.points = 0;
+          this.pointsPerSecond = 0;
+          this.clickPower = 1;
+          this.highestEraReached = 0;
+          this.luckLevel = 0;
+          this.efficiencyLevel = 0;
+          this.automationLevel = 0;
+          this.multiplierLevel = 0;
+          this.timeWarpLevel = 0;
+          this.activeTab = "normal";
+          this.prestigeCount = 0;
+
+          // Reset all upgrades
+          this.upgrades.forEach((upgrade) => {
+            upgrade.owned = 0;
+          });
+
+          // Clear save data
+          localStorage.removeItem("techClickerSave");
+
+          // Reset to normal tab
+          this.switchTab("normal");
+
+          // Update display
+          this.updateDisplay();
+
+          // Show reset confirmation
+          this.showFloatingText(
+            document.getElementById("clickButton"),
+            "🗑️ RESET COMPLETE!",
+            "#ff6b6b"
+          );
+        }
+
+        showPrivacyModal() {
+          document.getElementById("privacyModal").classList.add("show");
+        }
+
+        hidePrivacyModal() {
+          document.getElementById("privacyModal").classList.remove("show");
+        }
+
+        renderPrestige() {
+          const prestigeInfo = document.getElementById("prestigeInfo");
+          const canPrestige = this.canPrestige();
+          const prestigeBonus = Math.round((this.getPrestigeBonus() - 1) * 100);
+
+          prestigeInfo.innerHTML = `
+            <div class="prestige-section">
+              <h3>👑 Prestige System</h3>
+              <div class="prestige-stats">
+                <div class="prestige-count">Prestiges: ${
+                  this.prestigeCount
+                }</div>
+                <div class="prestige-bonus">Current Bonus: +${prestigeBonus}% to all production</div>
+              </div>
+              <button class="prestige-button" ${
+                !canPrestige ? "disabled" : ""
+              } onclick="game.doPrestige()">
+                ${canPrestige ? "PRESTIGE NOW!" : "Prestige Locked"}
+              </button>
+              <div class="prestige-requirement">
+                ${
+                  canPrestige
+                    ? "Reset all progress but gain +10% permanent bonus!"
+                    : `Requires ${this.prestigeRequirement.toLocaleString()} Innovation Points`
+                }
+              </div>
+              <div style="margin-top: 20px; font-size: 14px; color: rgba(255,255,255,0.7);">
+                Prestiging resets all upgrades and progress but gives a permanent 10% bonus to click power and points per second for each prestige level.
+              </div>
+            </div>
+          `;
         }
 
         getCurrentEra() {
+          // Check if we've reached a new era
           for (let i = this.eras.length - 1; i >= 0; i--) {
-            if (this.points >= this.eras[i].threshold) {
-              return this.eras[i];
+            if (
+              this.points >= this.eras[i].threshold &&
+              i > this.highestEraReached
+            ) {
+              this.highestEraReached = i;
+              break;
             }
           }
-          return this.eras[0];
+
+          // Return the highest era reached (never go backwards)
+          return this.eras[this.highestEraReached];
+        }
+
+        getNextEra() {
+          // Return the next era after the current highest reached
+          const nextIndex = this.highestEraReached + 1;
+          return nextIndex < this.eras.length ? this.eras[nextIndex] : null;
+        }
+
+        createClickEffects(e, isLucky = false, isMultiplied = false) {
+          const button = e.target;
+          const rect = button.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+
+          // Create ripple effect (golden if lucky, red if multiplied)
+          const ripple = document.createElement("div");
+          ripple.className = "click-ripple";
+          ripple.style.width = "50px";
+          ripple.style.height = "50px";
+          ripple.style.left = `${centerX - 25}px`;
+          ripple.style.top = `${centerY - 25}px`;
+
+          if (isLucky && isMultiplied) {
+            ripple.style.background =
+              "radial-gradient(circle, rgba(255, 107, 107, 0.9) 0%, rgba(254, 202, 87, 0.8) 50%, transparent 70%)";
+            ripple.style.transform = "scale(2)";
+          } else if (isLucky) {
+            ripple.style.background =
+              "radial-gradient(circle, rgba(254, 202, 87, 0.8) 0%, transparent 70%)";
+            ripple.style.transform = "scale(1.5)";
+          } else if (isMultiplied) {
+            ripple.style.background =
+              "radial-gradient(circle, rgba(255, 107, 107, 0.9) 0%, transparent 70%)";
+            ripple.style.transform = "scale(1.8)";
+          }
+
+          document.body.appendChild(ripple);
+
+          // Create collection icon effect
+          const era = this.getCurrentEra();
+          const collectionIcon = document.createElement("div");
+          collectionIcon.className = "collection-icon";
+
+          if (isLucky && isMultiplied) {
+            collectionIcon.textContent = "💎"; // Diamond for combo
+          } else if (isLucky) {
+            collectionIcon.textContent = "🍀";
+          } else if (isMultiplied) {
+            collectionIcon.textContent = "🎯";
+          } else {
+            collectionIcon.textContent = era.icon;
+          }
+
+          collectionIcon.style.left = `${e.clientX - 12}px`;
+          collectionIcon.style.top = `${e.clientY - 12}px`;
+
+          if (isLucky || isMultiplied) {
+            collectionIcon.style.fontSize = "32px";
+            if (isLucky && isMultiplied) {
+              collectionIcon.style.filter =
+                "drop-shadow(0 0 15px #ff6b6b) drop-shadow(0 0 10px #feca57)";
+            } else if (isLucky) {
+              collectionIcon.style.filter = "drop-shadow(0 0 10px #feca57)";
+            } else {
+              collectionIcon.style.filter = "drop-shadow(0 0 10px #ff6b6b)";
+            }
+          }
+
+          document.body.appendChild(collectionIcon);
+
+          // Clean up elements
+          setTimeout(() => {
+            document.body.removeChild(ripple);
+          }, 600);
+
+          setTimeout(() => {
+            document.body.removeChild(collectionIcon);
+          }, 2000);
+
+          // Add screen shake effect
+          button.style.animation = "none";
+          setTimeout(() => {
+            button.style.animation = "buttonShake 0.2s ease-in-out";
+          }, 10);
         }
 
         updateDisplay() {
@@ -506,28 +887,140 @@
           )} points per second`;
 
           const era = this.getCurrentEra();
+          const nextEra = this.getNextEra();
+
+          // Update era name
           document.getElementById(
-            "era"
+            "eraName"
           ).textContent = `${era.icon} ${era.name}`;
+
+          // Update era progress bar
+          const progressContainer = document.getElementById(
+            "eraProgressContainer"
+          );
+          const progressLabel = document.getElementById("eraProgressLabel");
+          const progressFill = document.getElementById("eraProgressFill");
+          const progressText = document.getElementById("eraProgressText");
+
+          if (nextEra) {
+            // Show progress bar if there's a next era
+            progressContainer.style.display = "block";
+
+            // Calculate progress based on current points towards the next era threshold
+            // This shows immediate progress from 0% when you start progressing toward the next era
+            const progressPercent = Math.min(
+              (this.points / nextEra.threshold) * 100,
+              100
+            );
+
+            // Update progress bar
+            const oldWidth = parseFloat(progressFill.style.width) || 0;
+            progressFill.style.width = `${progressPercent}%`;
+            progressText.textContent = `${progressPercent.toFixed(1)}%`;
+            progressLabel.textContent = `Progress to ${nextEra.name}`;
+
+            // Add glow effect if progress increased significantly
+            if (progressPercent > oldWidth + 1) {
+              progressFill.classList.add("progress-boost");
+              setTimeout(() => {
+                progressFill.classList.remove("progress-boost");
+              }, 800);
+            }
+          } else {
+            // Hide progress bar if at final era
+            progressContainer.style.display = "none";
+          }
 
           // Update click button icon based on era
           const clickButton = document.getElementById("clickButton");
           clickButton.textContent = era.icon;
+
+          // Update upgrade affordability highlighting
+          this.renderUpgrades();
         }
 
         renderUpgrades() {
-          const upgradesList = document.getElementById("upgradesList");
-          upgradesList.innerHTML = "";
+          const normalUpgradesList =
+            document.getElementById("normalUpgradesList");
+          const specialUpgradesList = document.getElementById(
+            "specialUpgradesList"
+          );
+          normalUpgradesList.innerHTML = "";
+          specialUpgradesList.innerHTML = "";
+
+          let hasLockedNormalUpgrades = false;
+          let hasLockedSpecialUpgrades = false;
 
           this.upgrades.forEach((upgrade) => {
+            const isUnlocked = this.isUpgradeUnlocked(upgrade);
+
+            // Skip locked upgrades entirely - don't render them
+            if (!isUnlocked) {
+              // Track if there are locked upgrades for the "more upgrades" message
+              if (upgrade.isSpecial) {
+                hasLockedSpecialUpgrades = true;
+              } else {
+                hasLockedNormalUpgrades = true;
+              }
+              return;
+            }
+
             const cost = this.getUpgradeCost(upgrade);
             const canAfford = this.points >= cost;
 
             const upgradeElement = document.createElement("div");
-            upgradeElement.className = `upgrade-item ${
-              canAfford ? "affordable" : "unaffordable"
-            }`;
+
+            // Determine CSS classes based on affordability (all shown upgrades are unlocked)
+            let cssClasses = "upgrade-item";
+            if (canAfford) {
+              cssClasses += " affordable";
+            } else {
+              cssClasses += " unaffordable";
+            }
+
+            upgradeElement.className = cssClasses;
             upgradeElement.dataset.upgradeId = upgrade.id;
+
+            const ownershipIcons = this.generateOwnershipIcons(upgrade);
+
+            let upgradeInfo = "";
+            if (upgrade.isSpecial) {
+              switch (upgrade.id) {
+                case "luck":
+                  const currentChance = Math.min(upgrade.owned * 1, 50);
+                  const nextChance = Math.min((upgrade.owned + 1) * 1, 50);
+                  upgradeInfo = `Owned: ${upgrade.owned} | Luck Chance: ${currentChance}% → ${nextChance}%`;
+                  break;
+                case "efficiency":
+                  const currentEff = Math.round(
+                    (Math.pow(1.02, upgrade.owned) - 1) * 100
+                  );
+                  const nextEff = Math.round(
+                    (Math.pow(1.02, upgrade.owned + 1) - 1) * 100
+                  );
+                  upgradeInfo = `Owned: ${upgrade.owned} | Efficiency: +${currentEff}% → +${nextEff}%`;
+                  break;
+                case "automation":
+                  const currentAuto = (upgrade.owned * 0.5).toFixed(1);
+                  const nextAuto = ((upgrade.owned + 1) * 0.5).toFixed(1);
+                  upgradeInfo = `Owned: ${upgrade.owned} | PPS Bonus: ${currentAuto}% → ${nextAuto}%`;
+                  break;
+                case "multiplier":
+                  const currentMult = upgrade.owned;
+                  const nextMult = upgrade.owned + 1;
+                  upgradeInfo = `Owned: ${upgrade.owned} | 10x Chance: ${currentMult}% → ${nextMult}%`;
+                  break;
+                case "timeWarp":
+                  const currentWarp = (upgrade.owned * 5).toFixed(0);
+                  const nextWarp = ((upgrade.owned + 1) * 5).toFixed(0);
+                  upgradeInfo = `Owned: ${upgrade.owned} | Click→PPS: ${currentWarp}% → ${nextWarp}%`;
+                  break;
+                default:
+                  upgradeInfo = `Owned: ${upgrade.owned}`;
+              }
+            } else {
+              upgradeInfo = `Owned: ${upgrade.owned} | +${upgrade.pointsPerSecond}/sec each`;
+            }
 
             upgradeElement.innerHTML = `
                         <div class="upgrade-name">${upgrade.name}</div>
@@ -535,20 +1028,98 @@
                           upgrade.description
                         }</div>
                         <div class="upgrade-cost">Cost: ${cost.toLocaleString()} points</div>
-                        <div class="upgrade-owned">Owned: ${upgrade.owned} | +${
-              upgrade.pointsPerSecond
-            }/sec each</div>
+                        <div class="upgrade-owned">${upgradeInfo}</div>
+                        <div class="upgrade-icons">${ownershipIcons}</div>
                     `;
 
-            upgradesList.appendChild(upgradeElement);
+            // Add to appropriate tab
+            if (upgrade.isSpecial) {
+              specialUpgradesList.appendChild(upgradeElement);
+            } else {
+              normalUpgradesList.appendChild(upgradeElement);
+            }
           });
+
+          // Check if we're not at the final era to show "more upgrades" message
+          const currentEra = this.getCurrentEra();
+          const isFinalEra =
+            this.eras[this.eras.length - 1].name === currentEra.name;
+
+          // Add "more upgrades to be unlocked" message if not at final era
+          if (!isFinalEra) {
+            if (hasLockedNormalUpgrades) {
+              const moreUpgradesMessage = document.createElement("div");
+              moreUpgradesMessage.className = "more-upgrades-message";
+              moreUpgradesMessage.innerHTML =
+                "🔮 More upgrades to be unlocked in future eras...";
+              normalUpgradesList.appendChild(moreUpgradesMessage);
+            }
+
+            if (hasLockedSpecialUpgrades) {
+              const moreSpecialMessage = document.createElement("div");
+              moreSpecialMessage.className = "more-upgrades-message";
+              moreSpecialMessage.innerHTML =
+                "⭐ More special upgrades to be unlocked in future eras...";
+              specialUpgradesList.appendChild(moreSpecialMessage);
+            }
+          }
         }
 
-        showFloatingText(element, text) {
+        generateOwnershipIcons(upgrade) {
+          if (upgrade.owned === 0) return "";
+
+          let iconsHtml = "";
+          const owned = upgrade.owned;
+
+          // Calculate different tiers
+          const hundreds = Math.floor(owned / 100);
+          const tens = Math.floor((owned % 100) / 10);
+          const ones = owned % 10;
+
+          const containerWidth = 350; // Approximate width of upgrade container
+          let iconIndex = 0;
+
+          // Add hundred icons (large, red gradient)
+          for (let i = 0; i < hundreds; i++) {
+            const position = this.getIconPosition(iconIndex, containerWidth);
+            iconsHtml += `<div class="ownership-icon large" style="left: ${position.x}px; top: ${position.y}px;">💯</div>`;
+            iconIndex++;
+          }
+
+          // Add ten icons (medium, yellow gradient)
+          for (let i = 0; i < tens; i++) {
+            const position = this.getIconPosition(iconIndex, containerWidth);
+            iconsHtml += `<div class="ownership-icon medium" style="left: ${position.x}px; top: ${position.y}px;">🔟</div>`;
+            iconIndex++;
+          }
+
+          // Add single icons (small, blue gradient)
+          for (let i = 0; i < ones; i++) {
+            const position = this.getIconPosition(iconIndex, containerWidth);
+            iconsHtml += `<div class="ownership-icon small" style="left: ${position.x}px; top: ${position.y}px;">●</div>`;
+            iconIndex++;
+          }
+
+          return iconsHtml;
+        }
+
+        getIconPosition(index, containerWidth) {
+          const iconsPerRow = Math.floor(containerWidth / 25); // Space icons 25px apart
+          const row = Math.floor(index / iconsPerRow);
+          const col = index % iconsPerRow;
+
+          return {
+            x: col * 25 + 5, // 5px margin from left
+            y: row * 15 + 2, // Stack rows with 15px height, 2px from top
+          };
+        }
+
+        showFloatingText(element, text, color = "#4ecdc4") {
           const rect = element.getBoundingClientRect();
           const floatingText = document.createElement("div");
           floatingText.className = "floating-text";
           floatingText.textContent = text;
+          floatingText.style.color = color;
           floatingText.style.left = `${rect.left + rect.width / 2}px`;
           floatingText.style.top = `${rect.top}px`;
 
@@ -578,6 +1149,13 @@
           const gameData = {
             points: this.points,
             pointsPerSecond: this.pointsPerSecond,
+            highestEraReached: this.highestEraReached,
+            luckLevel: this.luckLevel,
+            efficiencyLevel: this.efficiencyLevel,
+            automationLevel: this.automationLevel,
+            multiplierLevel: this.multiplierLevel,
+            timeWarpLevel: this.timeWarpLevel,
+            prestigeCount: this.prestigeCount,
             upgrades: this.upgrades.map((u) => ({ id: u.id, owned: u.owned })),
           };
           localStorage.setItem("techClickerSave", JSON.stringify(gameData));
@@ -590,6 +1168,13 @@
               const data = JSON.parse(saveData);
               this.points = data.points || 0;
               this.pointsPerSecond = data.pointsPerSecond || 0;
+              this.highestEraReached = data.highestEraReached || 0;
+              this.luckLevel = data.luckLevel || 0;
+              this.efficiencyLevel = data.efficiencyLevel || 0;
+              this.automationLevel = data.automationLevel || 0;
+              this.multiplierLevel = data.multiplierLevel || 0;
+              this.timeWarpLevel = data.timeWarpLevel || 0;
+              this.prestigeCount = data.prestigeCount || 0;
 
               if (data.upgrades) {
                 data.upgrades.forEach((savedUpgrade) => {
@@ -601,6 +1186,9 @@
                   }
                 });
               }
+
+              // Recalculate PPS after loading to ensure all bonuses are applied
+              this.recalculatePointsPerSecond();
             } catch (e) {
               console.log("Could not load save data");
             }
@@ -609,8 +1197,9 @@
       }
 
       // Start the game when the page loads
+      let game; // Global reference for prestige button
       window.addEventListener("DOMContentLoaded", () => {
-        new TechClickerGame();
+        game = new TechClickerGame();
       });
     </script>
   </body>
