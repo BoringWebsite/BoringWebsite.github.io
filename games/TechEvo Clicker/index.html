@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TechEvo Clicker</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        color: white;
+      }
+
+      .game-container {
+        max-width: 1200px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .main-area {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .click-area {
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        border-radius: 50%;
+        border: none;
+        margin: 20px auto;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .click-area:hover {
+        transform: scale(1.05);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .click-area:active {
+        transform: scale(0.95);
+      }
+
+      .stats {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .upgrades {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .upgrade-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+      }
+
+      .upgrade-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .upgrade-item.affordable {
+        border-color: #4ecdc4;
+        box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+      }
+
+      .upgrade-item.unaffordable {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .upgrade-name {
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 5px;
+      }
+
+      .upgrade-description {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+
+      .upgrade-cost {
+        font-size: 14px;
+        color: #4ecdc4;
+        font-weight: bold;
+      }
+
+      .upgrade-owned {
+        font-size: 12px;
+        color: #feca57;
+        margin-top: 5px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .subtitle {
+        text-align: center;
+        margin-bottom: 20px;
+        opacity: 0.8;
+        font-size: 1.1em;
+      }
+
+      .points-display {
+        font-size: 2em;
+        font-weight: bold;
+        color: #4ecdc4;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .pps-display {
+        font-size: 1.2em;
+        color: #feca57;
+        margin-top: 10px;
+      }
+
+      .era-display {
+        font-size: 1.5em;
+        color: #ff6b6b;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      .floating-text {
+        position: absolute;
+        pointer-events: none;
+        font-weight: bold;
+        font-size: 24px;
+        color: #4ecdc4;
+        animation: floatUp 1s ease-out forwards;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      @keyframes floatUp {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-100px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .game-container {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .click-area {
+          width: 150px;
+          height: 150px;
+          font-size: 36px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🚀 Tech Evolution Clicker</h1>
+    <p class="subtitle">Click to advance human technology through the ages!</p>
+
+    <div class="game-container">
+      <div class="main-area">
+        <div class="stats">
+          <div class="points-display" id="points">0 Innovation Points</div>
+          <div class="pps-display" id="pps">0 points per second</div>
+          <div class="era-display" id="era">Stone Age</div>
+        </div>
+
+        <button class="click-area" id="clickButton">🔥</button>
+
+        <div id="clickText">
+          <h3>Discovery Station</h3>
+          <p>Click to make groundbreaking discoveries!</p>
+        </div>
+      </div>
+
+      <div class="upgrades">
+        <h3 style="margin-bottom: 15px">🛠️ Technological Upgrades</h3>
+        <div id="upgradesList"></div>
+      </div>
+    </div>
+
+    <script>
+      class TechClickerGame {
+        constructor() {
+          this.points = 0;
+          this.pointsPerSecond = 0;
+          this.clickPower = 1;
+
+          this.upgrades = [
+            {
+              id: "wheel",
+              name: "🛞 The Wheel",
+              description:
+                "Revolutionary circular invention that changed transportation forever. Around 3500 BCE, this simple yet genius device reduced friction and made moving heavy objects much easier.",
+              baseCost: 10,
+              pointsPerSecond: 0.1,
+              owned: 0,
+              era: "Stone Age",
+            },
+            {
+              id: "fire",
+              name: "🔥 Controlled Fire",
+              description:
+                "Mastery over fire marked the beginning of cooking, metalworking, and protection from predators. This discovery, dating back 1.7 million years, was crucial for human survival.",
+              baseCost: 25,
+              pointsPerSecond: 0.3,
+              owned: 0,
+              era: "Stone Age",
+            },
+            {
+              id: "agriculture",
+              name: "🌾 Agriculture",
+              description:
+                "The Neolithic Revolution (~10,000 BCE) allowed humans to settle and form civilizations. Growing crops instead of hunting-gathering changed everything.",
+              baseCost: 100,
+              pointsPerSecond: 1,
+              owned: 0,
+              era: "Neolithic",
+            },
+            {
+              id: "writing",
+              name: "📜 Writing System",
+              description:
+                "Cuneiform and hieroglyphics (~3200 BCE) allowed humans to record information, laws, and stories. Knowledge could now be preserved across generations.",
+              baseCost: 250,
+              pointsPerSecond: 2.5,
+              owned: 0,
+              era: "Bronze Age",
+            },
+            {
+              id: "bronze",
+              name: "🔨 Bronze Working",
+              description:
+                "Combining copper and tin (~3300 BCE) created stronger tools and weapons. The Bronze Age began, revolutionizing craftsmanship and warfare.",
+              baseCost: 500,
+              pointsPerSecond: 5,
+              owned: 0,
+              era: "Bronze Age",
+            },
+            {
+              id: "iron",
+              name: "⚔️ Iron Smelting",
+              description:
+                "Iron working (~1500 BCE) produced even stronger materials than bronze. Better tools, weapons, and farming equipment followed.",
+              baseCost: 1000,
+              pointsPerSecond: 10,
+              owned: 0,
+              era: "Iron Age",
+            },
+            {
+              id: "printing",
+              name: "📖 Printing Press",
+              description:
+                "Gutenberg's invention (1440 CE) democratized knowledge. Books became affordable, spreading literacy and accelerating the Renaissance.",
+              baseCost: 2500,
+              pointsPerSecond: 25,
+              owned: 0,
+              era: "Renaissance",
+            },
+            {
+              id: "steam",
+              name: "🚂 Steam Engine",
+              description:
+                "James Watt's improvements (1769) powered the Industrial Revolution. Factories, trains, and ships transformed society and economics.",
+              baseCost: 5000,
+              pointsPerSecond: 50,
+              owned: 0,
+              era: "Industrial Age",
+            },
+            {
+              id: "electricity",
+              name: "⚡ Electricity",
+              description:
+                "Tesla and Edison's work brought power to homes and factories. The late 1800s saw the birth of the modern electrical world.",
+              baseCost: 10000,
+              pointsPerSecond: 100,
+              owned: 0,
+              era: "Industrial Age",
+            },
+            {
+              id: "telephone",
+              name: "📞 Telephone",
+              description:
+                "Bell's 1876 invention revolutionized communication. For the first time, people could talk across vast distances instantly.",
+              baseCost: 25000,
+              pointsPerSecond: 250,
+              owned: 0,
+              era: "Industrial Age",
+            },
+            {
+              id: "automobile",
+              name: "🚗 Automobile",
+              description:
+                "Ford's assembly line (1913) made cars affordable for everyone. Personal transportation transformed cities and society.",
+              baseCost: 50000,
+              pointsPerSecond: 500,
+              owned: 0,
+              era: "Industrial Age",
+            },
+            {
+              id: "airplane",
+              name: "✈️ Airplane",
+              description:
+                "The Wright Brothers' 1903 flight made the world smaller. Aviation connected continents and made global travel possible.",
+              baseCost: 100000,
+              pointsPerSecond: 1000,
+              owned: 0,
+              era: "Modern Age",
+            },
+            {
+              id: "computer",
+              name: "💻 Computer",
+              description:
+                "ENIAC (1946) and early computers laid the groundwork for the digital age. Calculating machines became thinking machines.",
+              baseCost: 250000,
+              pointsPerSecond: 2500,
+              owned: 0,
+              era: "Digital Age",
+            },
+            {
+              id: "transistor",
+              name: "🔬 Transistor",
+              description:
+                "Bell Labs' 1947 invention replaced vacuum tubes. This tiny switch enabled everything from radios to smartphones.",
+              baseCost: 500000,
+              pointsPerSecond: 5000,
+              owned: 0,
+              era: "Digital Age",
+            },
+            {
+              id: "internet",
+              name: "🌐 Internet",
+              description:
+                "ARPANET (1969) evolved into the World Wide Web. Tim Berners-Lee's 1989 creation connected humanity like never before.",
+              baseCost: 1000000,
+              pointsPerSecond: 10000,
+              owned: 0,
+              era: "Information Age",
+            },
+            {
+              id: "smartphone",
+              name: "📱 Smartphone",
+              description:
+                "The iPhone (2007) put a computer in everyone's pocket. Mobile computing changed how we work, learn, and connect.",
+              baseCost: 2500000,
+              pointsPerSecond: 25000,
+              owned: 0,
+              era: "Information Age",
+            },
+            {
+              id: "ai",
+              name: "🤖 Artificial Intelligence",
+              description:
+                "Machine learning and neural networks are creating intelligent systems. AI is beginning to augment and enhance human capabilities.",
+              baseCost: 5000000,
+              pointsPerSecond: 50000,
+              owned: 0,
+              era: "AI Age",
+            },
+            {
+              id: "quantum",
+              name: "⚛️ Quantum Computing",
+              description:
+                "Quantum computers use quantum mechanics to solve problems impossible for classical computers. The future of computing is quantum.",
+              baseCost: 10000000,
+              pointsPerSecond: 100000,
+              owned: 0,
+              era: "Quantum Age",
+            },
+          ];
+
+          this.eras = [
+            { name: "Stone Age", threshold: 0, icon: "🗿" },
+            { name: "Neolithic", threshold: 100, icon: "🌾" },
+            { name: "Bronze Age", threshold: 500, icon: "🔨" },
+            { name: "Iron Age", threshold: 2000, icon: "⚔️" },
+            { name: "Renaissance", threshold: 10000, icon: "🎨" },
+            { name: "Industrial Age", threshold: 50000, icon: "🏭" },
+            { name: "Modern Age", threshold: 250000, icon: "🚀" },
+            { name: "Digital Age", threshold: 1000000, icon: "💻" },
+            { name: "Information Age", threshold: 5000000, icon: "🌐" },
+            { name: "AI Age", threshold: 25000000, icon: "🤖" },
+            { name: "Quantum Age", threshold: 100000000, icon: "⚛️" },
+          ];
+
+          this.init();
+        }
+
+        init() {
+          this.loadGame();
+          this.setupEventListeners();
+          this.renderUpgrades();
+          this.updateDisplay();
+          this.startAutoSave();
+          this.startPointsPerSecond();
+        }
+
+        setupEventListeners() {
+          document
+            .getElementById("clickButton")
+            .addEventListener("click", (e) => this.handleClick(e));
+          document
+            .getElementById("upgradesList")
+            .addEventListener("click", (e) => this.handleUpgradeClick(e));
+        }
+
+        handleClick(e) {
+          this.points += this.clickPower;
+          this.updateDisplay();
+          this.showFloatingText(e.target, `+${this.clickPower}`);
+          this.saveGame();
+        }
+
+        handleUpgradeClick(e) {
+          const upgradeElement = e.target.closest(".upgrade-item");
+          if (!upgradeElement) return;
+
+          const upgradeId = upgradeElement.dataset.upgradeId;
+          this.buyUpgrade(upgradeId);
+        }
+
+        buyUpgrade(upgradeId) {
+          const upgrade = this.upgrades.find((u) => u.id === upgradeId);
+          if (!upgrade) return;
+
+          const cost = this.getUpgradeCost(upgrade);
+          if (this.points >= cost) {
+            this.points -= cost;
+            upgrade.owned++;
+            this.pointsPerSecond += upgrade.pointsPerSecond;
+            this.updateDisplay();
+            this.renderUpgrades();
+            this.saveGame();
+          }
+        }
+
+        getUpgradeCost(upgrade) {
+          return Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.owned));
+        }
+
+        getCurrentEra() {
+          for (let i = this.eras.length - 1; i >= 0; i--) {
+            if (this.points >= this.eras[i].threshold) {
+              return this.eras[i];
+            }
+          }
+          return this.eras[0];
+        }
+
+        updateDisplay() {
+          document.getElementById("points").textContent = `${Math.floor(
+            this.points
+          ).toLocaleString()} Innovation Points`;
+          document.getElementById(
+            "pps"
+          ).textContent = `${this.pointsPerSecond.toFixed(
+            1
+          )} points per second`;
+
+          const era = this.getCurrentEra();
+          document.getElementById(
+            "era"
+          ).textContent = `${era.icon} ${era.name}`;
+
+          // Update click button icon based on era
+          const clickButton = document.getElementById("clickButton");
+          clickButton.textContent = era.icon;
+        }
+
+        renderUpgrades() {
+          const upgradesList = document.getElementById("upgradesList");
+          upgradesList.innerHTML = "";
+
+          this.upgrades.forEach((upgrade) => {
+            const cost = this.getUpgradeCost(upgrade);
+            const canAfford = this.points >= cost;
+
+            const upgradeElement = document.createElement("div");
+            upgradeElement.className = `upgrade-item ${
+              canAfford ? "affordable" : "unaffordable"
+            }`;
+            upgradeElement.dataset.upgradeId = upgrade.id;
+
+            upgradeElement.innerHTML = `
+                        <div class="upgrade-name">${upgrade.name}</div>
+                        <div class="upgrade-description">${
+                          upgrade.description
+                        }</div>
+                        <div class="upgrade-cost">Cost: ${cost.toLocaleString()} points</div>
+                        <div class="upgrade-owned">Owned: ${upgrade.owned} | +${
+              upgrade.pointsPerSecond
+            }/sec each</div>
+                    `;
+
+            upgradesList.appendChild(upgradeElement);
+          });
+        }
+
+        showFloatingText(element, text) {
+          const rect = element.getBoundingClientRect();
+          const floatingText = document.createElement("div");
+          floatingText.className = "floating-text";
+          floatingText.textContent = text;
+          floatingText.style.left = `${rect.left + rect.width / 2}px`;
+          floatingText.style.top = `${rect.top}px`;
+
+          document.body.appendChild(floatingText);
+
+          setTimeout(() => {
+            document.body.removeChild(floatingText);
+          }, 1000);
+        }
+
+        startPointsPerSecond() {
+          setInterval(() => {
+            if (this.pointsPerSecond > 0) {
+              this.points += this.pointsPerSecond;
+              this.updateDisplay();
+            }
+          }, 1000);
+        }
+
+        startAutoSave() {
+          setInterval(() => {
+            this.saveGame();
+          }, 30000); // Save every 30 seconds
+        }
+
+        saveGame() {
+          const gameData = {
+            points: this.points,
+            pointsPerSecond: this.pointsPerSecond,
+            upgrades: this.upgrades.map((u) => ({ id: u.id, owned: u.owned })),
+          };
+          localStorage.setItem("techClickerSave", JSON.stringify(gameData));
+        }
+
+        loadGame() {
+          const saveData = localStorage.getItem("techClickerSave");
+          if (saveData) {
+            try {
+              const data = JSON.parse(saveData);
+              this.points = data.points || 0;
+              this.pointsPerSecond = data.pointsPerSecond || 0;
+
+              if (data.upgrades) {
+                data.upgrades.forEach((savedUpgrade) => {
+                  const upgrade = this.upgrades.find(
+                    (u) => u.id === savedUpgrade.id
+                  );
+                  if (upgrade) {
+                    upgrade.owned = savedUpgrade.owned || 0;
+                  }
+                });
+              }
+            } catch (e) {
+              console.log("Could not load save data");
+            }
+          }
+        }
+      }
+
+      // Start the game when the page loads
+      window.addEventListener("DOMContentLoaded", () => {
+        new TechClickerGame();
+      });
+    </script>
+  </body>
+</html>
