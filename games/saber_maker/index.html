@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Lightsaber Maker</title>
+		<title>Saber Maker</title>
 		<style>
 			body {
 				margin: 0;
@@ -27,7 +27,100 @@
 				border-radius: 10px;
 				border: 2px solid #333;
 				min-width: 250px;
+				max-height: 85vh;
+				overflow-y: auto;
 			}
+			/* Reset and Privacy Buttons */
+			.reset-button,
+			.privacy-button {
+				position: fixed;
+				top: 20px;
+				width: 40px;
+				height: 40px;
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				font-size: 18px;
+				transition: all 0.3s ease;
+				z-index: 1000;
+				background: rgba(0, 0, 0, 0.8);
+				color: white;
+				border: 2px solid #555;
+			}
+			.reset-button {
+				right: 20px;
+			}
+			.privacy-button {
+				right: 70px;
+			}
+			.reset-button:hover {
+				background: #ff4444;
+				transform: scale(1.1);
+				box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+			}
+			.privacy-button:hover {
+				background: #4caf50;
+				transform: scale(1.1);
+				box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+			}
+
+			/* Privacy Modal */
+			.privacy-modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.8);
+				display: none;
+				justify-content: center;
+				align-items: center;
+				z-index: 2000;
+			}
+			.privacy-modal.show {
+				display: flex;
+			}
+			.privacy-content {
+				background: #1a1a1a;
+				border-radius: 15px;
+				border: 2px solid #333;
+				padding: 30px;
+				max-width: 500px;
+				max-height: 80vh;
+				overflow-y: auto;
+				color: white;
+				position: relative;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+			}
+			.privacy-close {
+				position: absolute;
+				top: 15px;
+				right: 20px;
+				background: none;
+				border: none;
+				color: #888;
+				font-size: 24px;
+				cursor: pointer;
+			}
+			.privacy-close:hover {
+				color: #ff4444;
+			}
+			.privacy-content h2 {
+				color: #00ff00;
+				margin-bottom: 20px;
+			}
+			.privacy-content ul {
+				padding-left: 20px;
+			}
+			.privacy-content li {
+				margin-bottom: 10px;
+				line-height: 1.4;
+			}
+			.privacy-content strong {
+				color: #4ecdc4;
+			}
+
+			/* Existing styles... */
 			.menu-section {
 				margin-bottom: 15px;
 			}
@@ -58,15 +151,140 @@
 				background: #00ff00;
 				color: black;
 			}
+			.action-button {
+				background: #444;
+				border: 2px solid #666;
+				color: white;
+				padding: 12px 20px;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 14px;
+				font-weight: bold;
+				transition: all 0.3s;
+				width: 100%;
+				margin: 5px 0;
+			}
+			.action-button:hover {
+				background: #555;
+				border-color: #888;
+				transform: translateY(-2px);
+			}
+			.fight-button {
+				background: linear-gradient(45deg, #ff4444, #cc0000);
+				border-color: #ff6666;
+				color: white;
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+				box-shadow: 0 4px 8px rgba(255, 68, 68, 0.3);
+			}
+			.fight-button:hover {
+				background: linear-gradient(45deg, #ff6666, #ee0000);
+				box-shadow: 0 6px 12px rgba(255, 68, 68, 0.4);
+			}
+			.shuffle-button {
+				background: linear-gradient(45deg, #9b59b6, #8e44ad);
+				border-color: #a569bd;
+				color: white;
+				text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+				box-shadow: 0 4px 8px rgba(155, 89, 182, 0.3);
+			}
+			.shuffle-button:hover {
+				background: linear-gradient(45deg, #af6fb8, #9c56b8);
+				box-shadow: 0 6px 12px rgba(155, 89, 182, 0.4);
+			}
 		</style>
 	</head>
 	<body>
+		<!-- Reset and Privacy Buttons -->
+		<button
+			class="reset-button"
+			id="resetButton"
+			title="Delete Saved Saber Data"
+		>
+			🗑️
+		</button>
+		<button
+			class="privacy-button"
+			id="privacyButton"
+			title="Privacy Information"
+		>
+			🔒
+		</button>
+
+		<!-- Privacy Modal -->
+		<div class="privacy-modal" id="privacyModal">
+			<div class="privacy-content">
+				<button class="privacy-close" id="privacyClose">×</button>
+				<h2>🔒 Privacy & Data Storage</h2>
+				<p><strong>Your privacy is important to us!</strong></p>
+
+				<p>
+					This saber maker uses <strong>local storage</strong> to save your
+					custom saber directly on your device. Here's what you need to know:
+				</p>
+
+				<ul>
+					<li>
+						<strong>What we store:</strong> Only your saber configuration (blade
+						color, pommel/grip/emitter types and colors, power state)
+					</li>
+					<li>
+						<strong>Where it's stored:</strong> Locally on your device only -
+						never sent to any servers
+					</li>
+					<li>
+						<strong>Who can access it:</strong> Only you, on this device and
+						browser
+					</li>
+					<li>
+						<strong>No tracking:</strong> We don't track your activity or
+						collect personal information
+					</li>
+					<li>
+						<strong>No cookies:</strong> We don't use cookies for tracking or
+						advertising
+					</li>
+				</ul>
+
+				<p>
+					You can clear your saved saber data anytime using the reset button
+					(🗑️) or by clearing your browser's local storage.
+				</p>
+
+				<p>
+					<strong
+						>This storage allows the saber maker to remember your custom design
+						between sessions and for use in the fighting game.</strong
+					>
+				</p>
+			</div>
+		</div>
+
 		<canvas id="gameCanvas"></canvas>
 		<div id="menu">
+			<!-- Power Section -->
 			<div class="menu-section">
 				<h3>Power</h3>
 				<button id="powerToggle" class="part-button active">ON</button>
 			</div>
+
+			<!-- Randomize Section -->
+			<div class="menu-section">
+				<h3>Randomize</h3>
+				<button id="shuffleButton" class="action-button shuffle-button">
+					🎲 SHUFFLE SABER 🎲
+				</button>
+				<p
+					style="
+						font-size: 11px;
+						color: #888;
+						margin: 8px 0 0 0;
+						text-align: center;
+					"
+				>
+					Generate a completely random saber design
+				</p>
+			</div>
+
 			<div class="menu-section">
 				<h3>Blade</h3>
 				<div class="part-buttons" data-section="blade">
@@ -113,7 +331,7 @@
 					<button class="part-button" data-type="segmented">Segmented</button>
 					<button class="part-button" data-type="textured">Textured</button>
 					<button class="part-button" data-type="curved">Curved</button>
-                    <button class="part-button" data-type="grooved">Grooved</button>
+					<button class="part-button" data-type="grooved">Grooved</button>
 				</div>
 				<h4 style="margin: 10px 0 5px 0; color: #ccc; font-size: 12px">
 					Color
@@ -136,7 +354,7 @@
 					<button class="part-button" data-type="curved">Curved</button>
 					<button class="part-button" data-type="ceremonial">Ceremonial</button>
 					<button class="part-button" data-type="coiled">Coiled</button>
-                     <button class="part-button" data-type="layered">Layered</button>
+					<button class="part-button" data-type="layered">Layered</button>
 				</div>
 				<h4 style="margin: 10px 0 5px 0; color: #ccc; font-size: 12px">
 					Color
@@ -149,9 +367,26 @@
 					<button class="part-button" data-type="bronze">Bronze</button>
 				</div>
 			</div>
+
+			<!-- Fight Button Section -->
+			<div class="menu-section">
+				<h3>Combat</h3>
+				<button id="fightButton" class="action-button fight-button">
+					⚔️ ENTER COMBAT ⚔️
+				</button>
+				<p
+					style="
+						font-size: 11px;
+						color: #888;
+						margin: 8px 0 0 0;
+						text-align: center;
+					"
+				>
+					Your custom saber will be used in battle
+				</p>
+			</div>
 		</div>
 		<script src="https://cdn.babylonjs.com/babylon.js"></script>
-		<script src="lightsaber-game.js"></script>
+		<script src="saber-maker.js"></script>
 	</body>
-</html>
 </html>
