@@ -47,7 +47,7 @@ class LightsaberMaker {
     init() {
         this.createScene();
         this.createLightsaber();
-        this.setupControls();
+        this.setupControls();   
         this.setupMenu();
         this.startRenderLoop();
         
@@ -973,32 +973,80 @@ class LightsaberMaker {
     setupControls() {
         // Mouse/touch rotation controls
         this.scene.onPointerDown = (evt, pickInfo) => {
-            if (pickInfo.hit && pickInfo.pickedMesh && pickInfo.pickedMesh.parent === this.lightsaberGroup) {
-                this.isRotating = true;
-                this.lastPointerX = evt.clientX;
-                this.lastPointerY = evt.clientY;
-                this.canvas.style.cursor = 'grabbing';
+            if (pickInfo.hit && pickInfo.pickedMesh) {
+                // Check if the picked mesh belongs to the lightsaber group (including child meshes)
+                let parentNode = pickInfo.pickedMesh.parent;
+                let isLightsaberPart = false;
+                
+                // Walk up the parent chain to find if this belongs to the lightsaber
+                while (parentNode) {
+                    if (parentNode === this.lightsaberGroup) {
+                        isLightsaberPart = true;
+                        break;
+                    }
+                    parentNode = parentNode.parent;
+                }
+                
+                // Also check if the picked mesh itself is a direct child
+                if (pickInfo.pickedMesh.parent === this.lightsaberGroup) {
+                    isLightsaberPart = true;
+                }
+                
+                if (isLightsaberPart) {
+                    this.isRotating = true;
+                    this.lastPointerX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : 0);
+                    this.lastPointerY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : 0);
+                    this.canvas.style.cursor = 'grabbing';
+                    evt.preventDefault();
+                }
             }
         };
 
-        this.scene.onPointerUp = () => {
+        this.scene.onPointerUp = (evt) => {
             this.isRotating = false;
             this.canvas.style.cursor = 'default';
+            evt.preventDefault();
         };
 
         this.scene.onPointerMove = (evt) => {
             if (this.isRotating) {
-                const deltaX = evt.clientX - this.lastPointerX;
-                const deltaY = evt.clientY - this.lastPointerY;
+                const currentX = evt.clientX || (evt.touches && evt.touches[0] ? evt.touches[0].clientX : this.lastPointerX);
+                const currentY = evt.clientY || (evt.touches && evt.touches[0] ? evt.touches[0].clientY : this.lastPointerY);
+                
+                const deltaX = currentX - this.lastPointerX;
+                const deltaY = currentY - this.lastPointerY;
                 
                 // Rotate the lightsaber based on mouse movement
                 this.lightsaberGroup.rotation.y += deltaX * 0.01;
                 this.lightsaberGroup.rotation.x += deltaY * 0.01;
                 
-                this.lastPointerX = evt.clientX;
-                this.lastPointerY = evt.clientY;
+                this.lastPointerX = currentX;
+                this.lastPointerY = currentY;
+                evt.preventDefault();
             }
         };
+
+        // Add additional event listeners to handle edge cases
+        this.canvas.addEventListener('mouseup', () => {
+            this.isRotating = false;
+            this.canvas.style.cursor = 'default';
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            this.isRotating = false;
+            this.canvas.style.cursor = 'default';
+        });
+
+        // Touch event handlers for mobile
+        this.canvas.addEventListener('touchend', () => {
+            this.isRotating = false;
+            this.canvas.style.cursor = 'default';
+        });
+
+        this.canvas.addEventListener('touchcancel', () => {
+            this.isRotating = false;
+            this.canvas.style.cursor = 'default';
+        });
 
         // Zoom controls with mouse wheel
         this.canvas.addEventListener('wheel', (evt) => {
@@ -1017,9 +1065,28 @@ class LightsaberMaker {
 
         // Hover effect
         this.scene.onPointerObservable.add((pointerInfo) => {
-            if (pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && 
-                pointerInfo.pickInfo.pickedMesh.parent === this.lightsaberGroup) {
-                this.canvas.style.cursor = 'grab';
+            if (pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh && !this.isRotating) {
+                // Check if the picked mesh belongs to the lightsaber group
+                let parentNode = pointerInfo.pickInfo.pickedMesh.parent;
+                let isLightsaberPart = false;
+                
+                while (parentNode) {
+                    if (parentNode === this.lightsaberGroup) {
+                        isLightsaberPart = true;
+                        break;
+                    }
+                    parentNode = parentNode.parent;
+                }
+                
+                if (pointerInfo.pickInfo.pickedMesh.parent === this.lightsaberGroup) {
+                    isLightsaberPart = true;
+                }
+                
+                if (isLightsaberPart) {
+                    this.canvas.style.cursor = 'grab';
+                } else {
+                    this.canvas.style.cursor = 'default';
+                }
             } else if (!this.isRotating) {
                 this.canvas.style.cursor = 'default';
             }
