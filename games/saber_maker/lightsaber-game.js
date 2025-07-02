@@ -16,10 +16,15 @@ class LightsaberMaker {
         this.lastPointerY = 0;
         this.bladeOn = true;
         
+        // Add emitter height tracking
+        this.emitterHeight = 1.0; // Default height
+        
         // Randomly initialize parts and colors
-        const pommelOptions = ['basic', 'spiked', 'rounded', 'heavy', 'curved', 'ceremonial'];
-        const gripOptions = ['smooth', 'ribbed', 'wrapped', 'segmented', 'textured', 'curved'];
-        const emitterOptions = ['standard', 'wide', 'focused', 'shroud', 'dual', 'crossguard'];
+        const pommelOptions = ['basic', 'spiked', 'rounded', 'heavy', 'curved', 'ceremonial', 'coiled'];
+        const gripOptions = ['smooth', 'ribbed', 'segmented', 'textured', 'curved'];
+        const emitterOptions = ['standard', 'wide', 'focused', 'shroud', 'dual', 'crossguard', 'complex', 'layered'];
+
+
         const bladeOptions = ['blue', 'red', 'green', 'purple', 'yellow', 'white', 'orange', 'unstable'];
         const colorOptions = ['gray', 'gold', 'silver', 'black', 'bronze', 'brown', 'chrome'];
         
@@ -166,6 +171,36 @@ class LightsaberMaker {
                     tessellation: 16
                 }, this.scene);
                 break;
+            case 'coiled':
+                pommel = new BABYLON.TransformNode('coiledPommel', this.scene);
+                
+                // Base section
+                const coilBase = BABYLON.MeshBuilder.CreateCylinder('coilBase', {
+                    height: 0.4,
+                    diameter: 0.6
+                }, this.scene);
+                coilBase.parent = pommel;
+                
+                // Create coiled/ribbed section
+                for (let i = 0; i < 12; i++) {
+                    const coil = BABYLON.MeshBuilder.CreateTorus('coil' + i, {
+                        diameter: 0.65,
+                        thickness: 0.04,
+                        tessellation: 16
+                    }, this.scene);
+                    coil.position.y = 0.2 + (i * 0.05);
+                    coil.parent = pommel;
+                }
+                
+                // End cap
+                const endCap = BABYLON.MeshBuilder.CreateCylinder('endCap', {
+                    height: 0.15,
+                    diameterTop: 0.5,
+                    diameterBottom: 0.65
+                }, this.scene);
+                endCap.position.y = 0.8;
+                endCap.parent = pommel;
+                break;
             default: // basic
                 pommel = BABYLON.MeshBuilder.CreateCylinder('pommel', {
                     height: 0.6,
@@ -221,78 +256,7 @@ class LightsaberMaker {
                     ring.position.y = -0.75 + (i * 0.25);
                     ring.parent = grip;
                 }
-                break;
-            case 'wrapped':
-                grip = new BABYLON.TransformNode('wrappedGrip', this.scene);
                 
-                // Base cylinder (metal underneath)
-                const baseWrap = BABYLON.MeshBuilder.CreateCylinder('baseWrap', {
-                    height: 2,
-                    diameter: 0.58
-                }, this.scene);
-                baseWrap.parent = grip;
-                
-                // Create base material for the metal underneath
-                const wrappedBaseMaterial = new BABYLON.StandardMaterial('baseWrapMaterial', this.scene);
-                wrappedBaseMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-                baseWrap.material = wrappedBaseMaterial;
-                
-                // Create continuous spiraling cloth wrap
-                const wrapHeight = 2;
-                const wrapRadius = 0.305; // Slightly larger than base radius to sit on surface
-                const stripWidth = 0.12;
-                const stripHeight = 0.01; // Much flatter
-                const wrapsCount = 15; // More wraps for better coverage
-                const segmentsPerWrap = 12; // Fewer segments for cleaner look
-                
-                for (let wrap = 0; wrap < wrapsCount; wrap++) {
-                    for (let segment = 0; segment < segmentsPerWrap; segment++) {
-                        const totalSegment = wrap * segmentsPerWrap + segment;
-                        const angle = (segment / segmentsPerWrap) * Math.PI * 2;
-                        const yPos = -1 + (totalSegment / (wrapsCount * segmentsPerWrap)) * wrapHeight;
-                        
-                        // Create flatter rectangular strip segment
-                        const stripSegment = BABYLON.MeshBuilder.CreateBox(`wrapSegment${totalSegment}`, {
-                            width: stripWidth,
-                            height: stripHeight,
-                            depth: 0.35 // Reduced depth for flatter look
-                        }, this.scene);
-                        
-                        // Position the segment to lay flat against the cylinder
-                        stripSegment.position.x = Math.cos(angle) * wrapRadius;
-                        stripSegment.position.z = Math.sin(angle) * wrapRadius;
-                        stripSegment.position.y = yPos;
-                        
-                        // Rotate to follow the curve with minimal randomness for cleaner look
-                        stripSegment.rotation.y = angle + Math.PI / 2;
-                        stripSegment.rotation.x = (Math.random() - 0.5) * 0.03; // Very slight random tilt
-                        stripSegment.rotation.z = (Math.random() - 0.5) * 0.02; // Very slight random twist
-                        
-                        // Minimal position randomness to keep it flat
-                        stripSegment.position.y += (Math.random() - 0.5) * 0.005;
-                        
-                        stripSegment.parent = grip;
-                        
-                        // Create individual material with aging/wear variations
-                        const stripMaterial = new BABYLON.StandardMaterial(`stripMaterial${totalSegment}`, this.scene);
-                        const baseColor = this.getPartColor('grip', this.partColors.grip);
-                        
-                        // Add wear and aging variations
-                        const wearFactor = 0.9 + Math.random() * 0.2; // Less extreme wear variation
-                        const dirtFactor = 0.95 + Math.random() * 0.1; // Subtle dirt variation
-                        
-                        stripMaterial.diffuseColor = new BABYLON.Color3(
-                            Math.min(baseColor.r * wearFactor * dirtFactor, 1),
-                            Math.min(baseColor.g * wearFactor * dirtFactor, 1),
-                            Math.min(baseColor.b * wearFactor * dirtFactor, 1)
-                        );
-                        
-                        stripMaterial.specularColor = new BABYLON.Color3(0.05, 0.05, 0.05); // Very low shine for cloth
-                        stripMaterial.roughness = 0.9; // Very rough cloth texture
-                        
-                        stripSegment.material = stripMaterial;
-                    }
-                }
                 
                 // Add some loose hanging ends for realism
                 for (let i = 0; i < 2; i++) {
@@ -402,6 +366,8 @@ class LightsaberMaker {
         }
 
         let emitter;
+        let emitterTopY = 0.5; // Default top position relative to emitter base
+        
         switch (type) {
             case 'wide':
                 emitter = BABYLON.MeshBuilder.CreateCylinder('emitter', {
@@ -409,6 +375,7 @@ class LightsaberMaker {
                     diameterTop: 0.8,
                     diameterBottom: 0.6
                 }, this.scene);
+                emitterTopY = 0.5;
                 break;
             case 'focused':
                 emitter = BABYLON.MeshBuilder.CreateCylinder('emitter', {
@@ -416,6 +383,7 @@ class LightsaberMaker {
                     diameterTop: 0.4,
                     diameterBottom: 0.6
                 }, this.scene);
+                emitterTopY = 0.6;
                 break;
             case 'shroud':
                 emitter = new BABYLON.TransformNode('shroudEmitter', this.scene);
@@ -431,6 +399,7 @@ class LightsaberMaker {
                 shroud.position.y = 0.6;
                 base.parent = emitter;
                 shroud.parent = emitter;
+                emitterTopY = 1.1; // Top of the shroud
                 break;
             case 'dual':
                 emitter = new BABYLON.TransformNode('dualEmitter', this.scene);
@@ -451,6 +420,7 @@ class LightsaberMaker {
                 main.parent = emitter;
                 side1.parent = emitter;
                 side2.parent = emitter;
+                emitterTopY = 0.5;
                 break;
             case 'crossguard':
                 emitter = new BABYLON.TransformNode('crossguardEmitter', this.scene);
@@ -473,13 +443,103 @@ class LightsaberMaker {
                 mainEmitter.parent = emitter;
                 guard1.parent = emitter;
                 guard2.parent = emitter;
+                emitterTopY = 0.5;
+                break;
+            case 'complex':
+                emitter = new BABYLON.TransformNode('complexEmitter', this.scene);
+                
+                // Main base section
+                const mainBase = BABYLON.MeshBuilder.CreateCylinder('mainBase', {
+                    height: 0.6,
+                    diameter: 0.75
+                }, this.scene);
+                mainBase.position.y = -0.2;
+                mainBase.parent = emitter;
+                
+                // Middle ribbed section
+                for (let i = 0; i < 8; i++) {
+                    const rib = BABYLON.MeshBuilder.CreateCylinder('rib' + i, {
+                        height: 0.03,
+                        diameter: 0.8
+                    }, this.scene);
+                    rib.position.y = 0.1 + (i * 0.04);
+                    rib.parent = emitter;
+                }
+                
+                // Upper section with stepped design
+                const upperSection = BABYLON.MeshBuilder.CreateCylinder('upperSection', {
+                    height: 0.4,
+                    diameterTop: 0.6,
+                    diameterBottom: 0.75
+                }, this.scene);
+                upperSection.position.y = 0.55;
+                upperSection.parent = emitter;
+                
+                // Top ring detail
+                const topRing = BABYLON.MeshBuilder.CreateCylinder('topRing', {
+                    height: 0.08,
+                    diameter: 0.65
+                }, this.scene);
+                topRing.position.y = 0.8;
+                topRing.parent = emitter;
+                
+                // Final narrow emitter tip
+                const emitterTip = BABYLON.MeshBuilder.CreateCylinder('emitterTip', {
+                    height: 0.2,
+                    diameterTop: 0.45,
+                    diameterBottom: 0.6
+                }, this.scene);
+                emitterTip.position.y = 0.95;
+                emitterTip.parent = emitter;
+                emitterTopY = 1.05; // Top of the tip
+                break;
+            case 'layered':
+                emitter = new BABYLON.TransformNode('layeredEmitter', this.scene);
+                
+                // Base section - positioned to connect with grip
+                const layerBase = BABYLON.MeshBuilder.CreateCylinder('layerBase', {
+                    height: 0.2,
+                    diameter: 0.5
+                }, this.scene);
+                layerBase.position.y = -0.4; // Move down to connect with grip
+                layerBase.parent = emitter;
+                
+                // Create multiple stacked rings/discs
+                const ringData = [
+                    { diameter: 0.3, height: 0.3, y: -0.25 }, // Adjusted y positions
+                    { diameter: 0.5, height: 0.08, y: -0.1 },
+                    { diameter: 0.3, height: 0.1, y: -0.05 },
+                ];
+                
+                ringData.forEach((ring, index) => {
+                    const disc = BABYLON.MeshBuilder.CreateCylinder(`layerRing${index}`, {
+                        height: ring.height,
+                        diameter: ring.diameter
+                    }, this.scene);
+                    disc.position.y = ring.y;
+                    disc.parent = emitter;
+                });
+                
+                // Final emitter opening
+                const emitterOpening = BABYLON.MeshBuilder.CreateCylinder('emitterOpening', {
+                    height: 0.2,
+                    diameterTop: 0.7,
+                    diameterBottom: 0.65
+                }, this.scene);
+                emitterOpening.position.y = 0.1; // Adjusted to maintain proper height
+                emitterOpening.parent = emitter;
+                emitterTopY = 0.2; // Top of the opening
                 break;
             default: // standard
                 emitter = BABYLON.MeshBuilder.CreateCylinder('emitter', {
                     height: 1,
                     diameter: 0.7
                 }, this.scene);
+                emitterTopY = 0.5;
         }
+
+        // Store the emitter height for blade positioning
+        this.emitterHeight = emitterTopY;
 
         const material = new BABYLON.StandardMaterial('emitterMaterial', this.scene);
         const baseColor = this.getPartColor('emitter', this.partColors.emitter);
@@ -497,6 +557,18 @@ class LightsaberMaker {
         emitter.position.y = 1;
         emitter.parent = this.lightsaberGroup;
         this.lightsaberParts.emitter = emitter;
+        
+        // Update blade position if blade is on
+        if (this.bladeOn && this.lightsaberParts.blade) {
+            this.updateBladePosition();
+        }
+    }
+
+    updateBladePosition() {
+        if (this.lightsaberParts.blade) {
+            const bladeStartY = 1 + this.emitterHeight; // Emitter position + emitter height
+            this.lightsaberParts.blade.position.y = bladeStartY + 2.75; // Center blade above emitter
+        }
     }
 
     createBlade(color) {
@@ -515,6 +587,9 @@ class LightsaberMaker {
         if (!this.bladeOn) {
             return;
         }
+
+        // Calculate blade start position based on emitter
+        const bladeStartY = 1 + this.emitterHeight; // Emitter position + emitter height
 
         let blade;
         if (color === 'unstable') {
@@ -594,7 +669,7 @@ class LightsaberMaker {
         blade.parent = this.lightsaberGroup;
         
         // Start blade retracted into emitter
-        blade.position.y = 1.5;
+        blade.position.y = bladeStartY;
         blade.scaling = new BABYLON.Vector3(1, 0, 1);
         
         // Animate blade extension - both position and scale
@@ -615,8 +690,8 @@ class LightsaberMaker {
             'position.y',
             30,
             15,
-            1.5,
-            4.25,
+            bladeStartY,
+            bladeStartY + 2.75, // Move blade up by half its height
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
             null,
             () => {
@@ -709,6 +784,7 @@ class LightsaberMaker {
             if (this.lightsaberParts.blade) {
                 // Animate blade retraction by scaling down and moving position
                 const blade = this.lightsaberParts.blade;
+                const bladeStartY = 1 + this.emitterHeight;
                 
                 // Animate scaling down
                 const scaleAnimation = BABYLON.Animation.CreateAndStartAnimation(
@@ -729,8 +805,8 @@ class LightsaberMaker {
                     'position.y',
                     30,
                     15,
-                    4.25,
-                    1.5,
+                    bladeStartY + 2.75,
+                    bladeStartY,
                     BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
                     null,
                     () => {
