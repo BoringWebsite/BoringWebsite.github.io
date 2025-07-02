@@ -20,8 +20,8 @@ class LightsaberMaker {
         this.emitterHeight = 1.0; // Default height
         
         // Randomly initialize parts and colors
-        const pommelOptions = ['basic', 'spiked', 'rounded', 'heavy', 'curved', 'ceremonial', 'coiled'];
-        const gripOptions = ['smooth', 'ribbed', 'segmented', 'textured', 'curved'];
+        const pommelOptions = ['basic', 'spiked', 'rounded', 'heavy', 'curved', 'ceremonial', 'coiled', 'layered'];
+        const gripOptions = ['smooth', 'ribbed', 'segmented', 'textured', 'curved', 'grooved'];
         const emitterOptions = ['standard', 'wide', 'focused', 'shroud', 'dual', 'crossguard', 'complex', 'layered'];
 
 
@@ -201,6 +201,73 @@ class LightsaberMaker {
                 endCap.position.y = 0.8;
                 endCap.parent = pommel;
                 break;
+            case 'layered':
+                pommel = new BABYLON.TransformNode('layeredPommel', this.scene);
+                
+                // Main base cylinder - largest bottom section
+                const mainBase = BABYLON.MeshBuilder.CreateCylinder('pommelMainBase', {
+                    height: 0.4,
+                    diameter: 0.8
+                }, this.scene);
+                mainBase.position.y = 0;
+                mainBase.parent = pommel;
+                
+                // Middle section - stepped down
+                const middleSection = BABYLON.MeshBuilder.CreateCylinder('pommelMiddle', {
+                    height: 0.3,
+                    diameter: 0.65
+                }, this.scene);
+                middleSection.position.y = 0.35;
+                middleSection.parent = pommel;
+                
+                // Upper section - further stepped
+                const upperSection = BABYLON.MeshBuilder.CreateCylinder('pommelUpper', {
+                    height: 0.25,
+                    diameter: 0.5
+                }, this.scene);
+                upperSection.position.y = 0.625;
+                upperSection.parent = pommel;
+                
+                // Top cap - smallest section
+                const topCap = BABYLON.MeshBuilder.CreateCylinder('pommelTopCap', {
+                    height: 0.15,
+                    diameter: 0.35
+                }, this.scene);
+                topCap.position.y = 0.825;
+                topCap.parent = pommel;
+                
+                // Add protruding rectangular elements around the main base
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i * Math.PI) / 2; // 90 degrees apart
+                    const protrusion = BABYLON.MeshBuilder.CreateBox(`pommelProtrusion${i}`, {
+                        width: 0.15,
+                        height: 0.08,
+                        depth: 0.25
+                    }, this.scene);
+                    
+                    const radius = 0.45; // Distance from center
+                    protrusion.position.x = Math.cos(angle) * radius;
+                    protrusion.position.z = Math.sin(angle) * radius;
+                    protrusion.position.y = 0.05;
+                    protrusion.rotation.y = angle;
+                    protrusion.parent = pommel;
+                }
+                
+                // Add smaller detail rings between sections
+                const detailRing1 = BABYLON.MeshBuilder.CreateCylinder('pommelDetailRing1', {
+                    height: 0.05,
+                    diameter: 0.7
+                }, this.scene);
+                detailRing1.position.y = 0.225;
+                detailRing1.parent = pommel;
+                
+                const detailRing2 = BABYLON.MeshBuilder.CreateCylinder('pommelDetailRing2', {
+                    height: 0.04,
+                    diameter: 0.55
+                }, this.scene);
+                detailRing2.position.y = 0.525;
+                detailRing2.parent = pommel;
+                break;
             default: // basic
                 pommel = BABYLON.MeshBuilder.CreateCylinder('pommel', {
                     height: 0.6,
@@ -329,6 +396,69 @@ class LightsaberMaker {
                     diameterBottom: 0.7,
                     tessellation: 16
                 }, this.scene);
+                break;
+            case 'grooved':
+                grip = new BABYLON.TransformNode('groovedGrip', this.scene);
+                
+                // Main grip cylinder
+                const mainGrip = BABYLON.MeshBuilder.CreateCylinder('mainGrip', {
+                    height: 2,
+                    diameter: 0.62
+                }, this.scene);
+                mainGrip.parent = grip;
+                
+                // Create vertical grooves/channels around the grip
+                const numGrooves = 8; // Number of vertical grooves
+                for (let i = 0; i < numGrooves; i++) {
+                    const angle = (i * Math.PI * 2) / numGrooves;
+                    
+                    // Create groove as a thin cylinder that will be subtracted visually
+                    // Instead, we'll create raised sections between grooves
+                    const raisedSection = BABYLON.MeshBuilder.CreateCylinder(`raisedSection${i}`, {
+                        height: 1.8,
+                        diameter: 0.1,
+                        tessellation: 6
+                    }, this.scene);
+                    
+                    // Position the raised section around the grip
+                    const radius = 0.32;
+                    raisedSection.position.x = Math.cos(angle) * radius;
+                    raisedSection.position.z = Math.sin(angle) * radius;
+                    raisedSection.position.y = 0;
+                    raisedSection.parent = grip;
+                }
+                
+                // Add end caps with slightly larger diameter
+                const topCap = BABYLON.MeshBuilder.CreateCylinder('topCap', {
+                    height: 0.15,
+                    diameter: 0.68
+                }, this.scene);
+                topCap.position.y = 0.925;
+                topCap.parent = grip;
+                
+                const bottomCap = BABYLON.MeshBuilder.CreateCylinder('bottomCap', {
+                    height: 0.15,
+                    diameter: 0.68
+                }, this.scene);
+                bottomCap.position.y = -0.925;
+                bottomCap.parent = grip;
+                
+                // Add some detail rings near the ends
+                for (let i = 0; i < 3; i++) {
+                    const topRing = BABYLON.MeshBuilder.CreateCylinder(`topRing${i}`, {
+                        height: 0.03,
+                        diameter: 0.66
+                    }, this.scene);
+                    topRing.position.y = 0.7 + (i * 0.08);
+                    topRing.parent = grip;
+                    
+                    const bottomRing = BABYLON.MeshBuilder.CreateCylinder(`bottomRing${i}`, {
+                        height: 0.03,
+                        diameter: 0.66
+                    }, this.scene);
+                    bottomRing.position.y = -0.7 - (i * 0.08);
+                    bottomRing.parent = grip;
+                }
                 break;
             default: // smooth
                 grip = BABYLON.MeshBuilder.CreateCylinder('grip', {
