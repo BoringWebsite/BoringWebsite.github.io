@@ -14,6 +14,7 @@ class CombatGame {
 		this.saberGroup = null;
 		this.glowLayer = null;
 		this.unstableFlickerAnimation = null;
+		this.isAttacking = false;
 
 		// Add emitter height tracking
 		this.emitterHeight = 1.0; // Default height
@@ -222,11 +223,11 @@ class CombatGame {
 		// Create a group to hold all saber parts
 		this.saberGroup = new BABYLON.TransformNode("saberGroup", this.scene);
 
-		// Position saber relative to camera/player - move it further out and down
+		// Position saber relative to camera/player - positioned like a proper first-person weapon
 		this.saberGroup.parent = this.camera;
-		this.saberGroup.position = new BABYLON.Vector3(1.2, -1.0, 3.0); // Further right, lower, much further forward
-		this.saberGroup.rotation = new BABYLON.Vector3(-0.5, 0.3, 0.4); // Better angle for viewing the whole saber
-		this.saberGroup.scaling = new BABYLON.Vector3(1.5, 1.5, 1.5); // Slightly smaller but still visible
+		this.saberGroup.position = new BABYLON.Vector3(0.6, -0.4, 1.5); // More to the right, lower, and forward in view
+		this.saberGroup.rotation = new BABYLON.Vector3(0.5, 0.3, 0.2); // Angled for better visibility
+		this.saberGroup.scaling = new BABYLON.Vector3(0.15, 0.15, 0.15); // Larger scale so it's visible but not overwhelming
 
 		console.log("Creating saber with config:", this.saberConfig);
 
@@ -269,21 +270,106 @@ class CombatGame {
 				this.scene,
 				this.glowLayer
 			);
-			blade.position.y = 1 + this.emitterHeight + 2.75;
 			blade.parent = this.saberGroup;
 			this.saberParts.blade = blade;
 
-			// Start unstable flicker if needed
-			if (this.saberConfig.bladeColor === "unstable") {
-				const material = blade.getChildMeshes()[0]?.material;
-				if (material) {
-					this.startUnstableFlicker(blade, material);
+			// Calculate blade positions
+			const bladeStartY = 1 + this.emitterHeight;
+			const bladeEndY = bladeStartY + 2.75;
+
+			// Create blade extension animation for initial startup
+			SaberDrawer.createBladeExtensionAnimation(
+				blade,
+				bladeStartY,
+				bladeEndY,
+				() => {
+					// Start unstable flicker if needed after animation completes
+					if (this.saberConfig.bladeColor === "unstable") {
+						const material = blade.getChildMeshes()[0]?.material;
+						if (material) {
+							this.startUnstableFlicker(blade, material);
+						}
+					}
 				}
-			}
+			);
+
 			console.log("Blade created with color:", this.saberConfig.bladeColor);
 		} else {
 			console.log("Blade is turned off");
 		}
+	}
+
+	toggleBlade() {
+		// Toggle blade state
+		this.saberConfig.bladeOn = !this.saberConfig.bladeOn;
+
+		if (this.saberConfig.bladeOn) {
+			// Turn blade on
+			if (!this.saberParts.blade) {
+				const blade = SaberDrawer.createBlade(
+					this.saberConfig.bladeColor,
+					this.scene,
+					this.glowLayer
+				);
+				blade.parent = this.saberGroup;
+				this.saberParts.blade = blade;
+
+				// Calculate blade positions
+				const bladeStartY = 1 + this.emitterHeight;
+				const bladeEndY = bladeStartY + 2.75;
+
+				// Create blade extension animation
+				SaberDrawer.createBladeExtensionAnimation(
+					blade,
+					bladeStartY,
+					bladeEndY,
+					() => {
+						// Start unstable flicker if needed after animation completes
+						if (this.saberConfig.bladeColor === "unstable") {
+							const material = blade.getChildMeshes()[0]?.material;
+							if (material) {
+								this.startUnstableFlicker(blade, material);
+							}
+						}
+					}
+				);
+
+				console.log("Blade turned ON");
+			}
+		} else {
+			// Turn blade off
+			if (this.saberParts.blade) {
+				// Stop unstable flicker animation if running
+				if (this.unstableFlickerAnimation) {
+					this.scene.stopAnimation(this.saberParts.blade);
+					this.unstableFlickerAnimation = null;
+				}
+
+				const blade = this.saberParts.blade;
+				const bladeStartY = 1 + this.emitterHeight;
+				const bladeEndY = bladeStartY + 2.75;
+
+				// Use SaberDrawer's retraction animation
+				SaberDrawer.createBladeRetractionAnimation(
+					blade,
+					bladeEndY,
+					bladeStartY,
+					() => {
+						// Dispose blade after animation completes
+						blade.dispose();
+						this.saberParts.blade = null;
+					}
+				);
+
+				console.log("Blade turned OFF");
+			}
+		}
+
+		// Update HUD
+		this.setupHUD();
+
+		// Save the updated configuration
+		localStorage.setItem("customSaberConfig", JSON.stringify(this.saberConfig));
 	}
 
 	startUnstableFlicker(blade, material) {
@@ -301,6 +387,11 @@ class CombatGame {
 			switch (kbInfo.type) {
 				case BABYLON.KeyboardEventTypes.KEYDOWN:
 					this.inputMap[kbInfo.event.code] = true;
+
+					// Handle Q key for blade toggle
+					if (kbInfo.event.code === "KeyQ") {
+						this.toggleBlade();
+					}
 					break;
 				case BABYLON.KeyboardEventTypes.KEYUP:
 					this.inputMap[kbInfo.event.code] = false;
@@ -355,39 +446,6 @@ class CombatGame {
 			backButton.addEventListener("click", () => {
 				window.location.href = "index.html";
 			});
-		}
-	}
-
-	performAttack() {
-		// Simple attack animation - swing the saber
-		if (this.saberGroup) {
-			const originalRotation = this.saberGroup.rotation.clone();
-
-			// Quick swing animation
-			BABYLON.Animation.CreateAndStartAnimation(
-				"saberSwing",
-				this.saberGroup,
-				"rotation.z",
-				30,
-				10,
-				originalRotation.z,
-				originalRotation.z + Math.PI / 3,
-				BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-				null,
-				() => {
-					// Swing back
-					BABYLON.Animation.CreateAndStartAnimation(
-						"saberSwingBack",
-						this.saberGroup,
-						"rotation.z",
-						30,
-						10,
-						this.saberGroup.rotation.z,
-						originalRotation.z,
-						BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-					);
-				}
-			);
 		}
 	}
 
