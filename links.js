@@ -23,4 +23,11 @@ export const boredomCures = [
     description: "A game to make your own lightsaber",
     icon: "|",
   },
+
+  {
+    url: "https://ai-meme.cdqyfdbymn.me/",
+    name: "DeepSeek酱语录",
+    description: "A scroll-through gallery of DeepSeek whale-girl meme stickers — 128 captioned images.",
+    icon: "🐋",
+  },
 ];
