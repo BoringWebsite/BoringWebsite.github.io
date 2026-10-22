@@ -23,4 +23,11 @@ export const boredomCures = [
     description: "A game to make your own lightsaber",
     icon: "|",
   },
+  {
+
+    url: "https://www.memebako.com/",
+    name: "MemeBako",
+    description: "A watermark-free meme archive: browse penguin & dragon memes, stickers, GIFs and wallpapers, copy any image in one click.",
+    icon: "🐧",
+  },
 ];
